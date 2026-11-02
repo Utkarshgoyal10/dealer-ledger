@@ -1,6 +1,6 @@
-import bcrypt from 'bcryptjs';
 import { env } from '../config/env.js';
 import { User } from '../models/User.js';
+import { hashPassword } from '../utils/password.js';
 import { seedRoutes } from '../models/Route.js';
 import { migrateChequeToBank } from '../models/Transaction.js';
 import { initPush } from './push.js';
@@ -22,7 +22,7 @@ export async function bootstrap() {
     await User.create({
       name: env.ADMIN_NAME,
       username: env.ADMIN_USERNAME,
-      passwordHash: await bcrypt.hash(env.ADMIN_PASSWORD, 10),
+      passwordHash: await hashPassword(env.ADMIN_PASSWORD),
       role: 'admin',
     });
     console.log(`Admin "${env.ADMIN_USERNAME}" created`);

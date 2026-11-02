@@ -1,9 +1,9 @@
 // Creates an admin, or resets an existing admin's password.
 // Usage: npm run create-admin -- --username admin --password "secret123" --name "Owner"
-import bcrypt from 'bcryptjs';
 import mongoose from 'mongoose';
 import { connectDB } from '../src/config/db.js';
 import { User } from '../src/models/User.js';
+import { hashPassword } from '../src/utils/password.js';
 
 const args = {};
 const argv = process.argv.slice(2);
@@ -23,7 +23,7 @@ if (args.password.length < 6) {
 await connectDB();
 const username = args.username.trim().toLowerCase();
 const existing = await User.findOne({ username });
-const passwordHash = await bcrypt.hash(args.password, 10);
+const passwordHash = await hashPassword(args.password);
 if (existing) {
   existing.role = 'admin';
   existing.active = true;

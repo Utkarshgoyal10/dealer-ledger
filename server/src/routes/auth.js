@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import crypto from 'node:crypto';
-import bcrypt from 'bcryptjs';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import {
@@ -18,6 +17,7 @@ import { AdminSession } from '../models/AdminSession.js';
 import { badRequest, notFound } from '../utils/http.js';
 import { audit } from '../services/audit.js';
 import { istDateKey } from '../utils/dates.js';
+import { hashPassword, verifyPassword } from '../utils/password.js';
 import { notifyAdmins } from '../services/push.js';
 
 const router = Router();
@@ -44,8 +44,14 @@ const loginSchema = z.object({
 router.post('/login', loginLimiter, async (req, res) => {
   const { username, password } = loginSchema.parse(req.body);
   const user = await User.findOne({ username }).select('+passwordHash');
-  const ok = user && (await bcrypt.compare(password, user.passwordHash));
+  const check = user ? await verifyPassword(password, user.passwordHash) : { ok: false };
+  const ok = check.ok;
+  // Old case-sensitive password matched: save it in the new case-insensitive form
   if (!ok) return res.status(401).json({ message: 'Wrong username or password' });
+  if (check.needsUpgrade) {
+    user.passwordHash = await hashPassword(password);
+    await user.save();
+  }
   if (!user.active) return res.status(403).json({ message: 'Your account is deactivated. Contact admin.' });
   req.user = user;
 
@@ -164,8 +170,8 @@ const changeSchema = z.object({
 router.post('/change-password', requireAuth, adminOnly, async (req, res) => {
   const { currentPassword, newPassword } = changeSchema.parse(req.body);
   const user = await User.findById(req.user._id).select('+passwordHash');
-  if (!(await bcrypt.compare(currentPassword, user.passwordHash))) throw badRequest('Current password is wrong');
-  user.passwordHash = await bcrypt.hash(newPassword, 10);
+  if (!(await verifyPassword(currentPassword, user.passwordHash)).ok) throw badRequest('Current password is wrong');
+  user.passwordHash = await hashPassword(newPassword);
   user.tokenVersion += 1; // log out other devices
   await user.save();
   await AdminSession.updateMany({ user: user._id, revokedAt: null }, { revokedAt: new Date() });

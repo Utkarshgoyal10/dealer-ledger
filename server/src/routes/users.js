@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { User } from '../models/User.js';
 import { LoginRequest } from '../models/LoginRequest.js';
 import { adminOnly } from '../middleware/auth.js';
 import { badRequest, notFound } from '../utils/http.js';
 import { audit } from '../services/audit.js';
+import { hashPassword } from '../utils/password.js';
 
 const router = Router();
 router.use(adminOnly);
@@ -35,7 +35,7 @@ const createSchema = z.object({
 router.post('/', async (req, res) => {
   const data = createSchema.parse(req.body);
   if (await User.exists({ username: data.username })) throw badRequest('This username is already taken');
-  const user = await User.create({ ...data, passwordHash: await bcrypt.hash(data.password, 10) });
+  const user = await User.create({ ...data, passwordHash: await hashPassword(data.password) });
   await audit(req, { action: 'create', entity: 'User', entityId: user._id, summary: `Created ${user.role} ${user.username}`, after: user.toSafeJSON() });
   res.status(201).json(user.toSafeJSON());
 });
@@ -72,7 +72,7 @@ router.post('/:id/reset-password', async (req, res) => {
   const data = z.object({ password }).parse(req.body);
   const user = await User.findById(req.params.id);
   if (!user) throw notFound('User not found');
-  user.passwordHash = await bcrypt.hash(data.password, 10);
+  user.passwordHash = await hashPassword(data.password);
   user.tokenVersion += 1;
   await user.save();
   await audit(req, { action: 'reset-password', entity: 'User', entityId: user._id, summary: `Reset password for ${user.username}` });
