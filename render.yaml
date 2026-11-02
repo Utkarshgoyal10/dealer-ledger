@@ -1,0 +1,36 @@
+# Render blueprint: one free web service (React app + API on the same address)
+services:
+  - type: web
+    name: dealer-ledger
+    runtime: node
+    plan: free
+    region: singapore # closest to India
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: WORKER_VISIBLE_DAYS
+        value: "30"
+      - key: JWT_SECRET
+        generateValue: true # Render creates a strong random secret
+      # Filled in by you in the Render dashboard (never stored in GitHub):
+      - key: MONGO_URI
+        sync: false
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_NAME
+        sync: false
+      # Set these to your Render address after the first deploy, e.g.
+      # https://dealer-ledger.onrender.com  and  dealer-ledger.onrender.com
+      - key: CLIENT_URL
+        sync: false
+      - key: RP_ORIGIN
+        sync: false
+      - key: RP_ID
+        sync: false
