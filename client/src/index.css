@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+  /* itel red brand colour. The app's main colour ("indigo" in the code) is remapped here,
+     so buttons, active tabs, links and focus rings all use itel red.
+     600 is a touch deeper than the logo red (#fa023e) so white button text stays readable. */
+  --color-indigo-50: #fff1f3;
+  --color-indigo-100: #ffe0e6;
+  --color-indigo-200: #ffc6d1;
+  --color-indigo-300: #ff9bb0;
+  --color-indigo-400: #ff5f82;
+  --color-indigo-500: #fa023e;
+  --color-indigo-600: #e00039;
+  --color-indigo-700: #c20031;
+  --color-indigo-800: #a1032c;
+  --color-indigo-900: #860a2b;
+  --color-indigo-950: #4c0013;
+
+  /* Darker greys so small/secondary text is easy to read outdoors on a phone */
+  --color-slate-400: #64748b;
+  --color-slate-500: #475569;
+  --color-slate-600: #334155;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  background: #f8fafc;
+  color: #0f172a;
+  /* Slightly bolder text everywhere (medium instead of regular) */
+  font-weight: 500;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Extra space for iPhone home bar / notch. Kept in a layer so normal padding
+   utilities (py-3, p-3…) are not overridden; the safe-area is added on top. */
+@layer utilities {
+  .pb-safe {
+    padding-bottom: calc(var(--pb, 0px) + env(safe-area-inset-bottom, 0px));
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+/* Hide the tiny up/down arrows in number inputs (amounts are typed, not clicked) */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Sideways-scrolling rows (tabs, route buttons) without a visible scrollbar */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

@@ -1,0 +1,16 @@
+# Dependencies & builds
+node_modules/
+dist/
+dev-dist/
+
+# Secrets — never commit (passwords, database URL, keys)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Logs & OS files
+*.log
+.DS_Store
+Thumbs.db
