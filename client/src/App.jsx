@@ -43,7 +43,7 @@ export default function App() {
         <Route index element={<Home />} />
         <Route path="customers" element={<Customers />} />
         <Route path="customers/:id" element={<CustomerDetail />} />
-        <Route path="entries" element={<Entries />} />
+        <Route path="entries" element={<Protected admin><Entries /></Protected>} />
         <Route path="requests" element={<Requests />} />
         <Route path="cash" element={<CashClosing />} />
         <Route path="profile" element={<Profile />} />

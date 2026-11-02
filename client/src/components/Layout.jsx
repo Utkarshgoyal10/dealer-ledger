@@ -11,7 +11,6 @@ const WORKER_NAV = [
   { to: '/', label: 'Home', icon: Home, end: true },
   { to: '/cash', label: 'Today', icon: CalendarCheck },
   { to: '/customers', label: 'Dealers', icon: Users },
-  { to: '/entries', label: 'Entries', icon: ReceiptText },
   { to: '/requests', label: 'Requests', icon: KeyRound },
 ];
 
@@ -63,8 +62,10 @@ export default function Layout() {
   useEffect(() => setMoreOpen(false), [loc.pathname]);
 
   // Mobile bottom bar: 4 items + "More" for admin, all 5 for worker
-  const bottom = isAdmin ? nav.slice(0, 4) : nav;
-  const more = isAdmin ? nav.slice(4) : [];
+  // Phone bottom bar: admin = 4 tabs + More; salesman = Home + More (Today, Dealers, Requests)
+  const bottom = isAdmin ? nav.slice(0, 4) : nav.slice(0, 1);
+  const more = isAdmin ? nav.slice(4) : nav.slice(1);
+  const moreActive = more.find((n) => loc.pathname === n.to || loc.pathname.startsWith(`${n.to}/`));
 
   return (
     <div className="min-h-screen md:flex">
@@ -126,7 +127,7 @@ export default function Layout() {
 
       {/* Mobile bottom nav */}
       <nav className="pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white md:hidden">
-        <div className="grid grid-cols-5">
+        <div className="grid" style={{ gridTemplateColumns: `repeat(${bottom.length + 1}, minmax(0, 1fr))` }}>
           {bottom.map((n) => (
             <NavLink
               key={n.to}
@@ -139,10 +140,14 @@ export default function Layout() {
               {badges[n.badge] ? <span className="absolute top-1 right-[calc(50%-18px)] h-2 w-2 rounded-full bg-rose-600" /> : null}
             </NavLink>
           ))}
-          {isAdmin && (
-            <button onClick={() => setMoreOpen(true)} className="relative flex flex-col items-center gap-0.5 py-2 text-[11px] text-slate-500">
+          {more.length > 0 && (
+            <button
+              onClick={() => setMoreOpen(true)}
+              // highlighted (and shows the page name) when the open page is in the More list
+              className={cx('relative flex flex-col items-center gap-0.5 py-2 text-[11px]', moreActive ? 'text-indigo-700' : 'text-slate-500')}
+            >
               <MoreHorizontal className="h-5 w-5" />
-              More
+              {moreActive?.label || 'More'}
               {badges.closings || badges.requests ? <span className="absolute top-1 right-[calc(50%-18px)] h-2 w-2 rounded-full bg-rose-600" /> : null}
             </button>
           )}
@@ -153,7 +158,13 @@ export default function Layout() {
         <div className="fixed inset-0 z-50 flex items-end bg-slate-900/40 md:hidden" onClick={() => setMoreOpen(false)}>
           <div className="w-full rounded-t-2xl bg-white px-3 pt-3 pb-safe [--pb:0.75rem]" onClick={(e) => e.stopPropagation()}>
             {more.map((n) => (
-              <NavLink key={n.to} to={n.to} className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm text-slate-700 hover:bg-slate-50">
+              <NavLink
+                key={n.to}
+                to={n.to}
+                className={({ isActive }) =>
+                  cx('flex items-center gap-3 rounded-lg px-3 py-3 text-sm', isActive ? 'bg-indigo-50 font-bold text-indigo-700' : 'text-slate-700 hover:bg-slate-50')
+                }
+              >
                 <n.icon className="h-5 w-5" /> {n.label}
                 <Badge n={badges[n.badge]} />
               </NavLink>
