@@ -39,7 +39,7 @@ export async function reopenClosingIfVerified(req, txn) {
  * Safety net: if a verified closing no longer matches what is in the app (cash or bank total
  * changed for any reason), re-open it. `live` = current totals from the app for that day.
  */
-export async function reopenIfMismatch(req, closing, live, workerName = 'Worker') {
+export async function reopenIfMismatch(req, closing, live, workerName = 'Salesman') {
   if (!closing || closing.status !== 'verified') return false;
   if (live.systemCash === closing.systemCash && live.bankTotal === closing.bankTotal) return false;
   const doc = typeof closing.save === 'function' ? closing : await CashClosing.findById(closing._id);

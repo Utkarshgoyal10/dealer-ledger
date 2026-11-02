@@ -79,12 +79,12 @@ export default function Entries() {
           </Field>
         )}
         {isAdmin ? (
-          <Field as="div" label="Worker">
+          <Field as="div" label="Salesman">
             <Chips
               value={filters.worker}
               onChange={set('worker')}
               scroll
-              options={[{ value: '', label: 'All workers' }, ...(workers.data || []).map((w) => ({ value: w._id, label: w.name }))]}
+              options={[{ value: '', label: 'All salesmen' }, ...(workers.data || []).map((w) => ({ value: w._id, label: w.name }))]}
             />
           </Field>
         ) : (

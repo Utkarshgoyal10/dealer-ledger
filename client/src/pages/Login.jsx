@@ -144,7 +144,7 @@ export default function Login() {
                 <Fingerprint className="h-5 w-5" /> Admin: Log In with fingerprint
               </Button>
             )}
-            <p className="mt-4 text-center text-xs text-slate-500">Workers need admin approval each day. Forgot password? Ask admin.</p>
+            <p className="mt-4 text-center text-xs text-slate-500">Salesmen need admin approval each day. Forgot password? Ask admin.</p>
           </>
         )}
       </div>

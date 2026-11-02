@@ -10,7 +10,7 @@ import { fmtDate, inr, monthStartKey, todayKey } from '../utils/format';
 
 const TABS = [
   { value: 'summary', label: 'Sales summary' },
-  { value: 'workers', label: 'Worker-wise' },
+  { value: 'workers', label: 'Salesman-wise' },
   { value: 'outstanding', label: 'Outstanding' },
   { value: 'collections', label: 'Cash vs bank' },
   { value: 'schemes', label: 'Scheme' },
@@ -40,7 +40,7 @@ export default function Reports() {
   const { data: report, loading, error } = useApi(`/reports/${tab}`, params);
 
   const set = (k) => (v) => setF((s) => ({ ...s, [k]: v?.target ? v.target.value : v }));
-  const workerOptions = [{ value: '', label: 'All workers' }, ...(workers.data || []).map((w) => ({ value: w._id, label: w.name }))];
+  const workerOptions = [{ value: '', label: 'All salesmen' }, ...(workers.data || []).map((w) => ({ value: w._id, label: w.name }))];
 
   const exportAs = async (format) => {
     setBusy(format);
@@ -118,7 +118,7 @@ export default function Reports() {
               </Field>
             )}
             {tab !== 'workers' && (
-              <Field as="div" label="Worker">
+              <Field as="div" label="Salesman">
                 <Chips value={f.worker} onChange={set('worker')} options={workerOptions} scroll />
               </Field>
             )}

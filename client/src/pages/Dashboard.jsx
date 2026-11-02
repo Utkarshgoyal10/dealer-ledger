@@ -23,7 +23,7 @@ export default function Dashboard() {
             <Link to="/logins">
               <Card className="flex items-center gap-3 bg-indigo-50 p-3 ring-indigo-200">
                 <LogIn className="h-5 w-5 text-indigo-700" />
-                <span className="text-sm font-semibold text-indigo-900">{d.pendingLogins} worker login(s) waiting</span>
+                <span className="text-sm font-semibold text-indigo-900">{d.pendingLogins} salesman login(s) waiting</span>
               </Card>
             </Link>
           )}

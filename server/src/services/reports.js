@@ -103,7 +103,7 @@ export async function workersReport(q) {
   if (byAdmin) rows.push({ worker: 'Entered by admin', entries: byAdmin.count, ...byAdmin });
   rows.sort((a, b) => b.netSale - a.netSale);
   const cols = [
-    { key: 'worker', label: 'Worker', type: 'text' },
+    { key: 'worker', label: 'Salesman', type: 'text' },
     { key: 'entries', label: 'Entries', type: 'number' },
     money('sale', 'Sales'),
     money('return', 'Returns'),
@@ -114,7 +114,7 @@ export async function workersReport(q) {
     money('collection', 'Total collected'),
   ];
   return {
-    title: 'Worker-wise performance',
+    title: 'Salesman-wise performance',
     subtitle: label,
     columns: cols,
     rows,
@@ -162,7 +162,7 @@ export async function collectionsReport(q) {
   ];
   return {
     title: 'Cash vs bank collections',
-    subtitle: label + (q.worker ? '' : ' • all workers'),
+    subtitle: label + (q.worker ? '' : ' • all salesmen'),
     columns: cols,
     rows,
     totals: { date: 'Total', ...sumRows(rows, cols.slice(1).map((c) => c.key)) },
@@ -215,7 +215,7 @@ export async function returnsReport(q) {
     { key: 'date', label: 'Date', type: 'text' },
     { key: 'shopName', label: 'Dealer', type: 'text' },
     { key: 'route', label: 'Route', type: 'text' },
-    { key: 'worker', label: 'Worker', type: 'text' },
+    { key: 'worker', label: 'Salesman', type: 'text' },
     { key: 'note', label: 'Note', type: 'text' },
     money('amount', 'Amount'),
   ];

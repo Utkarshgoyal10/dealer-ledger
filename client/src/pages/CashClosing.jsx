@@ -206,7 +206,7 @@ function AdminClosings() {
 
   return (
     <div>
-      <PageHeader title="Cash closings" subtitle="Verify the cash each worker hands over against what they entered" />
+      <PageHeader title="Cash closings" subtitle="Verify the cash each salesman hands over against what they entered" />
       <div className="mb-3 flex flex-wrap gap-2">
         <div className="w-full max-w-sm">
           <Segmented
@@ -221,7 +221,7 @@ function AdminClosings() {
           />
         </div>
         <div className="w-full">
-          <Chips value={worker} onChange={setWorker} scroll options={[{ value: '', label: 'All workers' }, ...(workers.data || []).map((w) => ({ value: w._id, label: w.name }))]} />
+          <Chips value={worker} onChange={setWorker} scroll options={[{ value: '', label: 'All salesmen' }, ...(workers.data || []).map((w) => ({ value: w._id, label: w.name }))]} />
         </div>
       </div>
 
@@ -244,7 +244,7 @@ function AdminClosings() {
                   </div>
                   {c.needsResubmit && (
                     <div className="mt-1 text-xs font-semibold text-amber-700">
-                      ⏳ Worker added a payment after you verified ({fmtDateTime(c.reopenedAt)}). Waiting for them to submit cash again.
+                      ⏳ Salesman added a payment after you verified ({fmtDateTime(c.reopenedAt)}). Waiting for them to submit cash again.
                     </div>
                   )}
                   <div className="mt-1 text-xs text-slate-600 tabular">
@@ -255,7 +255,7 @@ function AdminClosings() {
                   )}
                   {(c.note || c.adminNote) && (
                     <div className="mt-0.5 text-xs text-slate-500">
-                      {c.note && <>Worker: “{c.note}” </>}
+                      {c.note && <>Salesman: “{c.note}” </>}
                       {c.adminNote && <>Admin: “{c.adminNote}”</>}
                     </div>
                   )}
@@ -322,7 +322,7 @@ function ReviewClosing({ review, onClose, onDone }) {
         <p>
           {review.c.worker?.name} • {fmtDate(review.c.date)} • declared <b>{inr(review.c.declaredCash)}</b>, app shows {inr(review.c.systemCash)}.
         </p>
-        {review.status === 'verified' && <p className={cx('text-xs text-slate-500')}>After verifying, the worker can no longer edit that day's entries.</p>}
+        {review.status === 'verified' && <p className={cx('text-xs text-slate-500')}>After verifying, the salesman can no longer edit that day's entries.</p>}
         <Field label="Note (optional)">
           <Textarea value={note} onChange={(e) => setNote(e.target.value)} />
         </Field>

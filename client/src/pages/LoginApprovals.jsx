@@ -43,7 +43,7 @@ export default function LoginApprovals() {
 
   return (
     <div>
-      <PageHeader title="Worker logins" subtitle={`Approve worker logins for today, ${fmtDate(new Date())}. Approval ends at midnight.`} />
+      <PageHeader title="Salesman logins" subtitle={`Approve salesman logins for today, ${fmtDate(new Date())}. Approval ends at midnight.`} />
       <NotificationSetup compact />
       <div className="mb-3 max-w-xs">
         <Segmented

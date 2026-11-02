@@ -6,7 +6,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useApi } from '../hooks/useApi';
 import { api, errMsg } from '../api';
 import { Button, Card, ErrorBox, Field, Input, PageHeader } from '../components/ui';
-import { fmtDateTime } from '../utils/format';
+import { fmtDateTime, ROLE_LABEL } from '../utils/format';
 import NotificationSetup from '../components/NotificationSetup';
 import AdminDevices from '../components/AdminDevices';
 
@@ -20,7 +20,7 @@ export default function Profile() {
       <Card className="mb-4 p-4">
         <div className="text-base font-bold">{user.name}</div>
         <div className="text-sm text-slate-600">Username: {user.username}</div>
-        <div className="mt-1 text-xs text-slate-500 capitalize">{user.role}</div>
+        <div className="mt-1 text-xs text-slate-500">{ROLE_LABEL[user.role] || user.role}</div>
         {!isAdmin && <div className="mt-2 text-xs text-slate-500">Your login is valid until midnight today. To change your password, ask admin.</div>}
       </Card>
 

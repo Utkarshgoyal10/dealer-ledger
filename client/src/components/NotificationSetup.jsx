@@ -57,7 +57,7 @@ export default function NotificationSetup({ compact = false }) {
       <Card className="mb-4 flex flex-wrap items-center gap-3 bg-indigo-50 p-3 ring-indigo-200">
         <BellRing className="h-5 w-5 shrink-0 text-indigo-700" />
         <div className="min-w-0 flex-1 text-sm text-indigo-900">
-          <div className="font-semibold">Get a phone notification when a worker wants to log in</div>
+          <div className="font-semibold">Get a phone notification when a salesman wants to log in</div>
           {isIosNotInstalled() ? (
             <div className="text-xs">On iPhone: tap Share → "Add to Home Screen", open the app from there, then enable.</div>
           ) : !status.supported ? (
@@ -83,7 +83,7 @@ export default function NotificationSetup({ compact = false }) {
         <Bell className="h-4 w-4 text-indigo-600" /> Phone notifications
       </h2>
       <p className="mt-1 mb-3 text-xs text-slate-500">
-        Get notified when a worker asks to log in, asks for old data, or submits cash closing — even when the app is closed. Free, no SMS. Turn it on separately on each phone/computer you use.
+        Get notified when a salesman asks to log in, asks for old data, or submits cash closing — even when the app is closed. Free, no SMS. Turn it on separately on each phone/computer you use.
       </p>
 
       {!status.supported ? (

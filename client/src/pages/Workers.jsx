@@ -5,7 +5,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useApi } from '../hooks/useApi';
 import { api, errMsg } from '../api';
 import { Button, Card, Chip, Empty, ErrorBox, Field, Input, Modal, PageHeader, Segmented, Spinner } from '../components/ui';
-import { fmtDateTime } from '../utils/format';
+import { fmtDateTime, ROLE_LABEL } from '../utils/format';
 
 export default function Workers() {
   const { user: me } = useAuth();
@@ -28,7 +28,7 @@ export default function Workers() {
     <div>
       <PageHeader
         title="Users"
-        subtitle="Workers need admin approval every day to log in. Admin stays logged in for 7 days."
+        subtitle="Salesmen need admin approval every day to log in. Admin stays logged in for 7 days."
         actions={
           <Button onClick={() => setModal({ mode: 'create' })}>
             <Plus className="h-4 w-4" /> Add user
@@ -48,7 +48,7 @@ export default function Workers() {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-semibold">{u.name}</span>
-                    <Chip className={u.role === 'admin' ? 'bg-indigo-50 text-indigo-700 ring-indigo-200' : undefined}>{u.role}</Chip>
+                    <Chip className={u.role === 'admin' ? 'bg-indigo-50 text-indigo-700 ring-indigo-200' : undefined}>{ROLE_LABEL[u.role] || u.role}</Chip>
                     {!u.active && <Chip className="bg-rose-50 text-rose-700 ring-rose-200">inactive</Chip>}
                   </div>
                   <div className="mt-0.5 text-xs text-slate-500">
@@ -132,12 +132,12 @@ function UserModal({ mode, user, onClose, onDone }) {
               </Field>
             )}
             {mode === 'create' && (
-              <Field as="div" label="Role" hint={f.role === 'admin' ? 'Admin has full access to everything.' : 'Worker needs your approval to log in each day.'}>
+              <Field as="div" label="Role" hint={f.role === 'admin' ? 'Admin has full access to everything.' : 'Salesman needs your approval to log in each day.'}>
                 <Segmented
                   value={f.role}
                   onChange={(v) => setF((s) => ({ ...s, role: v }))}
                   options={[
-                    { value: 'worker', label: 'Worker' },
+                    { value: 'worker', label: 'Salesman' },
                     { value: 'admin', label: 'Admin' },
                   ]}
                 />

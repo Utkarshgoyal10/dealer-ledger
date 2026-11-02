@@ -1,5 +1,8 @@
 const IST = 'Asia/Kolkata';
 
+/** What users see for each role (the saved role value stays 'worker') */
+export const ROLE_LABEL = { admin: 'Admin', worker: 'Salesman' };
+
 export function inr(n, { sign = false } = {}) {
   const v = Number(n || 0);
   const s = Math.abs(v).toLocaleString('en-IN', { maximumFractionDigits: 2 });

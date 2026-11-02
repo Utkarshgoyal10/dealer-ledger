@@ -26,7 +26,7 @@ export default function Requests() {
     <div>
       <PageHeader
         title={isAdmin ? 'Data access requests' : 'My data requests'}
-        subtitle={isAdmin ? 'Workers asking to see data older than 30 days' : 'Ask admin to unlock entries older than 30 days for a dealer'}
+        subtitle={isAdmin ? 'Salesmen asking to see data older than 30 days' : 'Ask admin to unlock entries older than 30 days for a dealer'}
         actions={
           !isAdmin && (
             <Button onClick={() => setCreating(true)}>
@@ -172,12 +172,12 @@ function ReviewModal({ review, onClose, onDone }) {
           <div className="mt-1 text-xs text-slate-500">“{req.reason}”</div>
         </div>
         {action === 'approve' && (
-          <Field label="Allow access for (days)" hint="After this the worker can no longer see this range">
+          <Field label="Allow access for (days)" hint="After this the salesman can no longer see this range">
             <Input type="number" min="1" max="90" value={days} onChange={(e) => setDays(e.target.value)} />
           </Field>
         )}
         {action !== 'revoke' && (
-          <Field label="Note to worker (optional)">
+          <Field label="Note to salesman (optional)">
             <Textarea value={note} onChange={(e) => setNote(e.target.value)} />
           </Field>
         )}
