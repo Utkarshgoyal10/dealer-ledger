@@ -8,6 +8,7 @@ import { api, errMsg } from '../api';
 import { Button, Card, ErrorBox, Field, Input, PageHeader } from '../components/ui';
 import { fmtDateTime } from '../utils/format';
 import NotificationSetup from '../components/NotificationSetup';
+import AdminDevices from '../components/AdminDevices';
 
 export default function Profile() {
   const { user, logout } = useAuth();
@@ -23,6 +24,7 @@ export default function Profile() {
         {!isAdmin && <div className="mt-2 text-xs text-slate-500">Your login is valid until midnight today. To change your password, ask admin.</div>}
       </Card>
 
+      {isAdmin && <AdminDevices />}
       {isAdmin && <NotificationSetup />}
       {isAdmin && <FingerprintSetup />}
       {isAdmin && <ChangePassword />}

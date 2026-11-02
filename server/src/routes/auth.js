@@ -13,7 +13,8 @@ import { env } from '../config/env.js';
 import { User } from '../models/User.js';
 import { LoginRequest } from '../models/LoginRequest.js';
 import { AuthChallenge, Passkey } from '../models/Passkey.js';
-import { adminOnly, requireAuth, signToken } from '../middleware/auth.js';
+import { adminOnly, issueAdminToken, requireAuth, signToken } from '../middleware/auth.js';
+import { AdminSession } from '../models/AdminSession.js';
 import { badRequest, notFound } from '../utils/http.js';
 import { audit } from '../services/audit.js';
 import { istDateKey } from '../utils/dates.js';
@@ -52,7 +53,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     user.lastLoginAt = new Date();
     await user.save();
     await audit(req, { action: 'login', entity: 'User', entityId: user._id, summary: `${user.username} logged in` });
-    return res.json({ token: signToken(user), user: user.toSafeJSON() });
+    return res.json({ token: await issueAdminToken(req, user, 'password'), user: user.toSafeJSON() });
   }
 
   // Worker: create a login request and wait for admin approval
@@ -109,7 +110,50 @@ router.get('/me', requireAuth, (req, res) => {
 router.post('/logout', requireAuth, async (req, res) => {
   // Worker logout ends today's approved session on the server too
   if (req.loginRequest) await LoginRequest.updateOne({ _id: req.loginRequest._id }, { status: 'revoked' });
+  if (req.adminSession) await AdminSession.updateOne({ _id: req.adminSession._id }, { revokedAt: new Date() });
   res.json({ ok: true });
+});
+
+// ---------------------------------------------------------------------------
+// Admin: devices where I am logged in
+// ---------------------------------------------------------------------------
+
+router.get('/sessions', requireAuth, adminOnly, async (req, res) => {
+  const sessions = await AdminSession.find({ user: req.user._id, revokedAt: null, expiresAt: { $gt: new Date() } })
+    .sort({ lastSeenAt: -1 })
+    .lean();
+  res.json(
+    sessions.map((s) => ({
+      _id: s._id,
+      device: s.device,
+      method: s.method,
+      ip: s.ip,
+      loggedInAt: s.createdAt,
+      lastSeenAt: s.lastSeenAt,
+      expiresAt: s.expiresAt,
+      current: String(s._id) === String(req.adminSession._id),
+    }))
+  );
+});
+
+router.delete('/sessions/:id', requireAuth, adminOnly, async (req, res) => {
+  const s = await AdminSession.findOneAndUpdate(
+    { _id: req.params.id, user: req.user._id, revokedAt: null },
+    { revokedAt: new Date() },
+    { new: true }
+  );
+  if (!s) throw notFound('Device not found or already logged out');
+  await audit(req, { action: 'logout-device', entity: 'User', entityId: req.user._id, summary: `Logged out admin device: ${s.device}` });
+  res.json({ ok: true, current: String(s._id) === String(req.adminSession._id) });
+});
+
+router.post('/sessions/logout-others', requireAuth, adminOnly, async (req, res) => {
+  const r = await AdminSession.updateMany(
+    { user: req.user._id, revokedAt: null, _id: { $ne: req.adminSession._id } },
+    { revokedAt: new Date() }
+  );
+  await audit(req, { action: 'logout-device', entity: 'User', entityId: req.user._id, summary: `Logged out ${r.modifiedCount} other admin device(s)` });
+  res.json({ ok: true, count: r.modifiedCount });
 });
 
 const changeSchema = z.object({
@@ -124,8 +168,9 @@ router.post('/change-password', requireAuth, adminOnly, async (req, res) => {
   user.passwordHash = await bcrypt.hash(newPassword, 10);
   user.tokenVersion += 1; // log out other devices
   await user.save();
+  await AdminSession.updateMany({ user: user._id, revokedAt: null }, { revokedAt: new Date() });
   await audit(req, { action: 'change-password', entity: 'User', entityId: user._id, summary: 'Changed own password' });
-  res.json({ token: signToken(user), user: user.toSafeJSON() });
+  res.json({ token: await issueAdminToken(req, user, req.adminSession?.method || 'password'), user: user.toSafeJSON() });
 });
 
 // ---------------------------------------------------------------------------
@@ -232,7 +277,7 @@ router.post('/passkey-login/verify', loginLimiter, async (req, res) => {
   await user.save();
   req.user = user;
   await audit(req, { action: 'login', entity: 'User', entityId: user._id, summary: `${user.username} logged in with fingerprint` });
-  res.json({ token: signToken(user), user: user.toSafeJSON() });
+  res.json({ token: await issueAdminToken(req, user, 'fingerprint'), user: user.toSafeJSON() });
 });
 
 export default router;
