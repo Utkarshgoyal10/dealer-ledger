@@ -1,4 +1,4 @@
-# itel Dealer Ledger
+# Dealer Ledger
 
 A ledger app for a mobile distribution business. The field team (workers) records each
 dealer's **sales, sale returns, payments (cash or bank) and scheme amounts**. The admin

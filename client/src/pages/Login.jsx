@@ -141,7 +141,7 @@ export default function Login() {
             </Card>
             {browserSupportsWebAuthn() && (
               <Button variant="secondary" className="mt-3 w-full" onClick={fingerprint} disabled={loading}>
-                <Fingerprint className="h-5 w-5" /> Admin: log in with fingerprint
+                <Fingerprint className="h-5 w-5" /> Admin: Log In with fingerprint
               </Button>
             )}
             <p className="mt-4 text-center text-xs text-slate-500">Workers need admin approval each day. Forgot password? Ask admin.</p>
