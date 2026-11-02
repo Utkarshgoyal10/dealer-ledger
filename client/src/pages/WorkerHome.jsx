@@ -18,7 +18,7 @@ export default function WorkerHome() {
   const [form, setForm] = useState({ open: false });
 
   return (
-    <div>
+    <div className="max-w-3xl">
       <div className="mb-5">
         <h1 className="text-xl font-bold">Hi, {user.name.split(' ')[0]}</h1>
         <p className="text-sm text-slate-500">{fmtDate(new Date())}</p>
@@ -26,12 +26,13 @@ export default function WorkerHome() {
 
       <InstallApp />
 
-      <div className="grid grid-cols-2 gap-3">
+      {/* Phone: 2×2 big tiles. Tablet/PC: one row of 4 normal-size tiles */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {ACTIONS.map((a) => (
           <button
             key={a.type}
             onClick={() => setForm({ open: true, type: a.type })}
-            className={`flex aspect-[4/3] flex-col items-center justify-center gap-2 rounded-2xl text-base font-bold shadow-sm transition-colors ${a.cls}`}
+            className={`flex aspect-[4/3] flex-col items-center justify-center gap-2 rounded-2xl text-base font-bold shadow-sm transition-colors md:aspect-square md:max-h-44 ${a.cls}`}
           >
             <a.icon className="h-8 w-8" />
             {a.label}
