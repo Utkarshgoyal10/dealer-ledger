@@ -1,9 +1,7 @@
 import { useState } from 'react';
-import toast from 'react-hot-toast';
 import { Plus } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { useApi } from '../hooks/useApi';
-import { api, errMsg } from '../api';
 import { Button, Card, Chips, Empty, ErrorBox, Field, Input, PageHeader, Pager, Spinner, Stat } from '../components/ui';
 import TxnForm from '../components/TxnForm';
 import TxnList from '../components/TxnList';
@@ -66,12 +64,12 @@ export default function Entries() {
           />
         </Field>
         {filters.type === 'payment' && (
-          <Field as="div" label="Payment mode">
+          <Field as="div" label="Payment mode" hint={filters.paymentMode ? 'Tap again to show both' : 'Showing cash and bank'}>
             <Chips
               value={filters.paymentMode}
-              onChange={set('paymentMode')}
+              // Tapping the selected mode again clears the filter (shows both)
+              onChange={(v) => set('paymentMode')(v === filters.paymentMode ? '' : v)}
               options={[
-                { value: '', label: 'Cash + Bank' },
                 { value: 'cash', label: 'Cash' },
                 { value: 'bank', label: 'Bank' },
               ]}
