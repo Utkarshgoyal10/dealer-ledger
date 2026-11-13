@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ShoppingCart, Undo2, Wallet, Gift } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import TxnForm from '../components/TxnForm';
+import CustomerPicker from '../components/CustomerPicker';
 import InstallApp from '../components/InstallApp';
 import { fmtDate } from '../utils/format';
 
@@ -16,6 +18,7 @@ const ACTIONS = [
 export default function WorkerHome() {
   const { user } = useAuth();
   const [form, setForm] = useState({ open: false });
+  const nav = useNavigate();
 
   return (
     <div className="max-w-3xl">
@@ -25,6 +28,11 @@ export default function WorkerHome() {
       </div>
 
       <InstallApp />
+
+      {/* Quick dealer search: tap → type → opens that dealer's page */}
+      <div className="mb-4">
+        <CustomerPicker value="" onChange={(id) => id && nav(`/customers/${id}`)} placeholder="Search dealer…" />
+      </div>
 
       {/* Phone: 2×2 big tiles. Tablet/PC: one row of 4 normal-size tiles */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
