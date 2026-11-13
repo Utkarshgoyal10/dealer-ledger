@@ -70,3 +70,13 @@ input[type='number'] {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* Phones zoom in when a typing box has text smaller than 16px, and stay zoomed
+   after changing screens. 16px on phones stops that. */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}

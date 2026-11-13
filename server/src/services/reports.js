@@ -139,12 +139,18 @@ export async function outstandingReport(q) {
     { key: 'route', label: 'Route', type: 'text' },
     money('balance', 'Outstanding'),
   ];
+  // Total = money still to collect (same as Dashboard). Advances are shown separately, not netted off.
+  const owed = rows.reduce((s, r) => s + (r.balance > 0 ? r.balance : 0), 0);
+  const advance = rows.reduce((s, r) => s + (r.balance < 0 ? -r.balance : 0), 0);
+  const fmt = (n) => `₹${round2(n).toLocaleString('en-IN')}`;
   return {
     title: 'Dealer outstanding',
-    subtitle: `As of ${istDateKey(asOf)}`,
+    subtitle:
+      `As of ${istDateKey(asOf)}` +
+      (advance >= 0.01 ? ` • Advance (dealers paid extra) ${fmt(advance)} • Net ${fmt(owed - advance)}` : ''),
     columns: cols,
     rows,
-    totals: { shopName: 'Total', ...sumRows(rows, ['balance']) },
+    totals: { shopName: 'Total to collect', balance: round2(owed) },
   };
 }
 
