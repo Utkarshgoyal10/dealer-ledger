@@ -76,7 +76,10 @@ export default function Customers() {
                 <Link to={`/customers/${c._id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50">
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold">{c.shopName}</div>
-                    <div className="truncate text-xs text-slate-500">{c.route || 'No route'}</div>
+                    <div className="truncate text-xs text-slate-500">
+                      {c.route || 'No route'}
+                      {isAdmin && c.hideBalance && <span className="ml-1.5 text-amber-700">• balance hidden from salesmen</span>}
+                    </div>
                   </div>
                   {isAdmin && <Balance value={c.balance} className="text-sm" />}
                   <ChevronRight className="h-4 w-4 text-slate-300" />

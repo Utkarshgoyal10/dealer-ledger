@@ -49,9 +49,16 @@ router.get('/', async (req, res) => {
   res.json(customers.map((c) => ({ ...c, balance: balances.get(String(c._id)) })));
 });
 
+/** Salesman + dealer marked "hide balance" -> balance figures are never sent to the phone */
+const balanceHiddenFor = (req, customer) => req.user.role !== 'admin' && !!customer.hideBalance;
+
 router.get('/:id', async (req, res) => {
   const customer = await Customer.findOne({ _id: req.params.id, deleted: false }).lean();
   if (!customer) throw notFound('Dealer not found');
+  if (balanceHiddenFor(req, customer)) {
+    const { openingBalance, ...rest } = customer;
+    return res.json({ ...rest, balanceHidden: true });
+  }
   res.json({ ...customer, balance: await computeBalance(customer) });
 });
 
@@ -77,6 +84,16 @@ router.get('/:id/ledger', async (req, res) => {
         .map((g) => ({ fromDate: g.fromDate, toDate: g.toDate, accessExpiresAt: g.accessExpiresAt })),
     };
   }
+  if (balanceHiddenFor(req, ledger.customer)) {
+    // Entries stay visible (salesman can add/check them); every balance figure is removed
+    const { openingBalance, ...customer } = ledger.customer;
+    return res.json({
+      customer,
+      rows: ledger.rows.map(({ balance, ...r }) => r),
+      visibility: ledger.visibility,
+      balanceHidden: true,
+    });
+  }
   res.json(ledger);
 });
 
@@ -84,11 +101,13 @@ const customerSchema = z.object({
   shopName: z.string().trim().min(1, 'Shop name is required'),
   route: z.string().trim().optional().default(''),
   openingBalance: z.coerce.number().optional().default(0),
+  hideBalance: z.boolean().optional(),
 });
 
 // Workers and admin can add customers
 router.post('/', async (req, res) => {
   const data = customerSchema.parse(req.body);
+  if (req.user.role !== 'admin') delete data.hideBalance; // only admin decides this
   data.route = await resolveRoute(data.route);
   const dup = await Customer.findOne({ deleted: false, route: data.route, shopName: new RegExp(`^${escapeRegex(data.shopName)}$`, 'i') });
   if (dup) throw badRequest(`"${dup.shopName}" already exists on this route`);
@@ -106,7 +125,11 @@ router.patch('/:id', adminOnly, async (req, res) => {
   const before = customer.toObject();
   Object.assign(customer, data);
   await customer.save();
-  await audit(req, { action: 'update', entity: 'Customer', entityId: customer._id, summary: `Updated dealer ${customer.shopName}`, before, after: customer });
+  const summary =
+    'hideBalance' in data && data.hideBalance !== !!before.hideBalance
+      ? `${data.hideBalance ? 'Hid' : 'Showed'} balance of ${customer.shopName} ${data.hideBalance ? 'from' : 'to'} salesmen`
+      : `Updated dealer ${customer.shopName}`;
+  await audit(req, { action: 'update', entity: 'Customer', entityId: customer._id, summary, before, after: customer });
   res.json(customer);
 });
 

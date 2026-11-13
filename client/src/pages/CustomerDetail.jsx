@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Pencil, Plus, KeyRound, Trash2, Lock } from 'lucide-react';
+import { ArrowLeft, Pencil, Plus, KeyRound, Trash2, Lock, EyeOff } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { useApi } from '../hooks/useApi';
 import { api, errMsg } from '../api';
@@ -24,7 +24,7 @@ export default function CustomerDetail() {
 
   if (ledger.error) return <ErrorBox>{ledger.error}</ErrorBox>;
   if (!ledger.data) return <Spinner />;
-  const { customer: c, rows, broughtForward, currentBalance, visibility } = ledger.data;
+  const { customer: c, rows, broughtForward, currentBalance, visibility, balanceHidden } = ledger.data;
 
   const remove = async () => {
     if (!window.confirm(`Delete dealer "${c.shopName}"? Their entries stay in reports and the audit log.`)) return;
@@ -48,12 +48,23 @@ export default function CustomerDetail() {
           <div className="min-w-0">
             <h1 className="text-lg font-bold">{c.shopName}</h1>
             <div className="mt-0.5 text-sm text-slate-600">{c.route || 'No route'}</div>
-            <div className="mt-0.5 text-xs text-slate-500">Opening balance {inr(c.openingBalance)}</div>
+            {!balanceHidden && <div className="mt-0.5 text-xs text-slate-500">Opening balance {inr(c.openingBalance)}</div>}
+            {isAdmin && c.hideBalance && (
+              <Chip className="mt-1.5 bg-amber-50 text-amber-800 ring-amber-200">
+                <EyeOff className="mr-1 h-3 w-3" /> Balance hidden from salesmen
+              </Chip>
+            )}
           </div>
-          <div className="text-right">
-            <div className="text-xs text-slate-500">Outstanding</div>
-            <Balance value={currentBalance} className="text-2xl" />
-          </div>
+          {balanceHidden ? (
+            <div className="flex items-center gap-1.5 text-right text-xs text-slate-500">
+              <EyeOff className="h-4 w-4" /> Balance hidden by admin
+            </div>
+          ) : (
+            <div className="text-right">
+              <div className="text-xs text-slate-500">Outstanding</div>
+              <Balance value={currentBalance} className="text-2xl" />
+            </div>
+          )}
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
           <Button size="sm" onClick={() => setTxnForm({ open: true })}>
@@ -111,10 +122,12 @@ export default function CustomerDetail() {
       )}
 
       <Card>
-        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5 text-xs text-slate-500">
-          <span>{rows.length ? 'Balance brought forward' : 'Balance'}</span>
-          <Balance value={broughtForward} />
-        </div>
+        {!balanceHidden && (
+          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5 text-xs text-slate-500">
+            <span>{rows.length ? 'Balance brought forward' : 'Balance'}</span>
+            <Balance value={broughtForward} />
+          </div>
+        )}
         {rows.length === 0 ? (
           <Empty>No entries in this period</Empty>
         ) : (
@@ -136,7 +149,7 @@ export default function CustomerDetail() {
                       </div>
                       <div className="text-right text-sm tabular">
                         <div className={t.debit ? 'font-bold' : 'font-bold text-emerald-700'}>{t.debit ? `+${inr(t.debit)}` : t.credit ? `−${inr(t.credit)}` : inr(0)}</div>
-                        <div className="text-xs text-slate-500">Bal {inr(t.balance)}</div>
+                        {!balanceHidden && <div className="text-xs text-slate-500">Bal {inr(t.balance)}</div>}
                       </div>
                     </div>
                   </li>
@@ -155,7 +168,7 @@ export default function CustomerDetail() {
                     <th className="px-4 py-2 text-left font-semibold">By</th>
                     <th className="px-4 py-2 text-right font-semibold">Debit (+)</th>
                     <th className="px-4 py-2 text-right font-semibold">Credit (−)</th>
-                    <th className="px-4 py-2 text-right font-semibold">Balance</th>
+                    {!balanceHidden && <th className="px-4 py-2 text-right font-semibold">Balance</th>}
                   </tr>
                 </thead>
                 <tbody className="tabular">
@@ -171,7 +184,7 @@ export default function CustomerDetail() {
                         <td className="px-4 py-2 text-slate-600">{t.createdBy?.name}</td>
                         <td className="px-4 py-2 text-right">{t.debit ? inr(t.debit) : ''}</td>
                         <td className="px-4 py-2 text-right text-emerald-700">{t.credit ? inr(t.credit) : ''}</td>
-                        <td className="px-4 py-2 text-right font-semibold">{inr(t.balance)}</td>
+                        {!balanceHidden && <td className="px-4 py-2 text-right font-semibold">{inr(t.balance)}</td>}
                       </tr>
                     );
                   })}

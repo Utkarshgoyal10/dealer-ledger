@@ -6,6 +6,8 @@ const customerSchema = new mongoose.Schema(
     route: { type: String, trim: true, default: '' },
     // Positive = customer owes us at the start, negative = advance from customer
     openingBalance: { type: Number, default: 0 },
+    // Admin can hide this dealer's balance from salesmen (they can still add entries)
+    hideBalance: { type: Boolean, default: false },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     deleted: { type: Boolean, default: false },
     deletedAt: Date,
