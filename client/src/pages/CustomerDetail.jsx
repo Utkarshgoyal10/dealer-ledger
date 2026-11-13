@@ -57,6 +57,14 @@ export default function CustomerDetail() {
   const showEntries = isAdmin || reveal.entries;
 
   const remove = async () => {
+    // A dealer with money due (or advance) can't be deleted — the server blocks it too
+    if (Math.abs(currentBalance || 0) >= 0.01) {
+      toast.error(
+        `Can't delete: ${c.shopName} ${currentBalance > 0 ? 'still owes' : 'has advance of'} ${inr(Math.abs(currentBalance))}. Settle the balance to ₹0 first.`,
+        { duration: 6000 }
+      );
+      return;
+    }
     if (!window.confirm(`Delete dealer "${c.shopName}"? Their entries stay in reports and the audit log.`)) return;
     try {
       await api.delete(`/customers/${id}`);

@@ -136,6 +136,16 @@ router.patch('/:id', adminOnly, async (req, res) => {
 router.delete('/:id', adminOnly, async (req, res) => {
   const customer = await Customer.findOne({ _id: req.params.id, deleted: false });
   if (!customer) throw notFound('Dealer not found');
+  // Never let money "disappear" from outstanding: only a dealer with zero balance can be deleted
+  const balance = await computeBalance(customer);
+  if (Math.abs(balance) >= 0.01) {
+    const amt = `₹${Math.abs(balance).toLocaleString('en-IN')}`;
+    throw badRequest(
+      balance > 0
+        ? `Can't delete ${customer.shopName}: they still owe ${amt}. Settle the balance to ₹0 first.`
+        : `Can't delete ${customer.shopName}: they have ${amt} advance. Settle the balance to ₹0 first.`
+    );
+  }
   customer.deleted = true;
   customer.deletedAt = new Date();
   customer.deletedBy = req.user._id;
