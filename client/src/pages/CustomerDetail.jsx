@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Pencil, Plus, KeyRound, Trash2, Lock, EyeOff } from 'lucide-react';
+import { ArrowLeft, Pencil, Plus, KeyRound, Trash2, Lock, EyeOff, ShoppingCart, Undo2, Wallet, Gift } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { useApi } from '../hooks/useApi';
 import { api, errMsg } from '../api';
@@ -9,7 +9,25 @@ import { Balance, Button, Card, Chip, Empty, ErrorBox, Field, Input, Spinner, cx
 import TxnForm from '../components/TxnForm';
 import CustomerForm from '../components/CustomerForm';
 import RequestForm from '../components/RequestForm';
-import { canEditTxn, fmtDate, fmtDateTime, inr, TYPE_META, txnDetail } from '../utils/format';
+import { canEditTxn, fmtDate, fmtDateTime, inr, TYPE_META, txnDetail, istKey } from '../utils/format';
+
+const ROW_META = {
+  sale: { label: 'Sale', icon: ShoppingCart, bg: 'bg-blue-50', fg: 'text-blue-700' },
+  return: { label: 'Sale return', icon: Undo2, bg: 'bg-amber-50', fg: 'text-amber-700' },
+  payment: { label: 'Payment', icon: Wallet, bg: 'bg-emerald-50', fg: 'text-emerald-700' },
+  scheme: { label: 'Scheme', icon: Gift, bg: 'bg-violet-50', fg: 'text-violet-700' },
+};
+
+/** [[dateKey, entries], ...] keeping the given order */
+function groupByDate(list) {
+  const groups = [];
+  for (const t of list) {
+    const k = istKey(t.date);
+    if (!groups.length || groups[groups.length - 1][0] !== k) groups.push([k, []]);
+    groups[groups.length - 1][1].push(t);
+  }
+  return groups;
+}
 
 export default function CustomerDetail() {
   const { id } = useParams();
@@ -122,8 +140,9 @@ export default function CustomerDetail() {
       )}
 
       <Card>
+        {/* PC: starting balance on top (table below runs oldest → newest) */}
         {!balanceHidden && (
-          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5 text-xs text-slate-500">
+          <div className={cx('items-center justify-between border-b border-slate-100 px-4 py-2.5 text-xs text-slate-500', rows.length ? 'hidden md:flex' : 'flex')}>
             <span>{rows.length ? 'Balance brought forward' : 'Balance'}</span>
             <Balance value={broughtForward} />
           </div>
@@ -132,30 +151,52 @@ export default function CustomerDetail() {
           <Empty>No entries in this period</Empty>
         ) : (
           <>
-            {/* Mobile list */}
-            <ul className="divide-y divide-slate-100 md:hidden">
-              {[...rows].reverse().map((t) => {
-                const editable = canEditTxn(user, t);
-                return (
-                  <li key={t._id} onClick={() => editable && setTxnForm({ open: true, txn: t })} className={cx('px-4 py-3', editable && 'cursor-pointer hover:bg-slate-50')}>
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <Chip className={TYPE_META[t.type].chip}>{TYPE_META[t.type].label}</Chip>
-                          {t.type === 'payment' && t.paymentMode && <Chip className={t.paymentMode === 'cash' ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-sky-50 text-sky-700 ring-sky-200'}>{t.paymentMode === 'cash' ? 'Cash' : 'Bank'}</Chip>}
-                          <span className="text-xs text-slate-500">{fmtDate(t.date)}</span>
-                        </div>
-                        {txnDetail(t) && <div className="mt-1 truncate text-xs text-slate-500">{txnDetail(t)}</div>}
-                      </div>
-                      <div className="text-right text-sm tabular">
-                        <div className={t.debit ? 'font-bold' : 'font-bold text-emerald-700'}>{t.debit ? `+${inr(t.debit)}` : t.credit ? `−${inr(t.credit)}` : inr(0)}</div>
-                        {!balanceHidden && <div className="text-xs text-slate-500">Bal {inr(t.balance)}</div>}
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+            {/* Phone: newest first, grouped by date, starting balance at the bottom */}
+            <div className="md:hidden">
+              {groupByDate([...rows].reverse()).map(([day, items]) => (
+                <div key={day}>
+                  <div className="bg-slate-50 px-4 py-1.5 text-xs font-bold text-slate-600">{fmtDate(day)}</div>
+                  <ul className="divide-y divide-slate-100">
+                    {items.map((t) => {
+                      const editable = canEditTxn(user, t);
+                      const m = ROW_META[t.type];
+                      const plus = t.type === 'sale';
+                      return (
+                        <li
+                          key={t._id}
+                          onClick={() => editable && setTxnForm({ open: true, txn: t })}
+                          className={cx('flex items-center gap-3 px-4 py-3', editable && 'cursor-pointer active:bg-slate-50')}
+                        >
+                          <span className={cx('flex h-9 w-9 shrink-0 items-center justify-center rounded-full', m.bg)}>
+                            <m.icon className={cx('h-4 w-4', m.fg)} />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-bold text-slate-900">
+                              {m.label}
+                              {t.type === 'payment' && t.paymentMode && <span className="font-semibold text-slate-500"> · {t.paymentMode === 'cash' ? 'Cash' : 'Bank'}</span>}
+                            </div>
+                            {t.note && <div className="truncate text-xs text-slate-500">{t.note}</div>}
+                          </div>
+                          <div className="shrink-0 text-right tabular">
+                            <div className={cx('text-sm font-bold', plus ? 'text-slate-900' : 'text-emerald-700')}>
+                              {plus ? '+' : '−'}
+                              {inr(t.amount)}
+                            </div>
+                            {!balanceHidden && <div className="text-[11px] text-slate-500">Bal {inr(t.balance)}</div>}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+              {!balanceHidden && (
+                <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-2.5 text-xs text-slate-600">
+                  <span>Balance before {fmtDate(rows[0].date)}</span>
+                  <Balance value={broughtForward} />
+                </div>
+              )}
+            </div>
 
             {/* Desktop table */}
             <div className="hidden overflow-x-auto md:block">
