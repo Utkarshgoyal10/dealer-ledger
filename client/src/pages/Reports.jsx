@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { FileSpreadsheet, FileText } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, FileSpreadsheet, FileText } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { download } from '../api';
 import { Button, Card, Chips, Empty, ErrorBox, Field, Input, PageHeader, Spinner, cx } from '../components/ui';
@@ -54,6 +54,25 @@ export default function Reports() {
   };
 
   const [first, ...rest] = report?.columns || [];
+
+  // Sorting: click a column heading (PC) or a "Sort by" button (phone). asc -> desc -> original order
+  const [sort, setSort] = useState({ key: null, dir: 'asc' });
+  useEffect(() => setSort({ key: null, dir: 'asc' }), [tab]);
+  const toggleSort = (key) =>
+    setSort((s) => (s.key !== key ? { key, dir: 'asc' } : s.dir === 'asc' ? { key, dir: 'desc' } : { key: null, dir: 'asc' }));
+  const rows = useMemo(() => {
+    const list = report?.rows || [];
+    if (!sort.key) return list;
+    const col = report.columns.find((c) => c.key === sort.key);
+    const num = col && col.type !== 'text';
+    return [...list].sort((a, b) => {
+      const x = a[sort.key], y = b[sort.key];
+      const cmp = num ? (Number(x) || 0) - (Number(y) || 0) : String(x ?? '').localeCompare(String(y ?? ''), 'en', { numeric: true });
+      return sort.dir === 'asc' ? cmp : -cmp;
+    });
+  }, [report, sort]);
+  const SortIcon = ({ k }) =>
+    sort.key !== k ? <ArrowUpDown className="h-3 w-3 opacity-40" /> : sort.dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
 
   return (
     <div>
@@ -144,7 +163,24 @@ export default function Reports() {
             <>
               {/* Phone: one card per row, every column visible */}
               <div className="space-y-2 md:hidden">
-                {report.rows.map((r, i) => (
+                <div className="no-scrollbar -mx-4 flex items-center gap-2 overflow-x-auto px-4 pb-1">
+                  <span className="shrink-0 text-xs text-slate-500">Sort by</span>
+                  {report.columns.map((c) => (
+                    <button
+                      key={c.key}
+                      type="button"
+                      onClick={() => toggleSort(c.key)}
+                      className={cx(
+                        'inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs whitespace-nowrap ring-1',
+                        sort.key === c.key ? 'bg-indigo-600 font-bold text-white ring-indigo-600' : 'bg-white text-slate-700 ring-slate-300'
+                      )}
+                    >
+                      {c.label}
+                      {sort.key === c.key && (sort.dir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />)}
+                    </button>
+                  ))}
+                </div>
+                {rows.map((r, i) => (
                   <Card key={r._id || i} className="p-3">
                     <div className="mb-1.5 font-bold text-slate-900">{show(first, r[first.key])}</div>
                     <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
@@ -181,13 +217,25 @@ export default function Reports() {
                     <tr>
                       {report.columns.map((c) => (
                         <th key={c.key} className={cx('px-3 py-2 font-bold whitespace-nowrap', c.type === 'text' ? 'text-left' : 'text-right')}>
-                          {c.label}
+                          <button
+                            type="button"
+                            onClick={() => toggleSort(c.key)}
+                            title="Click to sort"
+                            className={cx(
+                              'inline-flex items-center gap-1 rounded px-1 -mx-1 hover:bg-slate-200/60 hover:text-slate-900',
+                              c.type !== 'text' && 'flex-row-reverse',
+                              sort.key === c.key && 'text-indigo-700'
+                            )}
+                          >
+                            {c.label}
+                            <SortIcon k={c.key} />
+                          </button>
                         </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody className="tabular">
-                    {report.rows.map((r, i) => (
+                    {rows.map((r, i) => (
                       <tr key={r._id || i} className="border-t border-slate-100">
                         {report.columns.map((c) => (
                           <td key={c.key} className={cx('px-3 py-2 whitespace-nowrap', c.type === 'text' ? 'text-left' : 'text-right')}>
