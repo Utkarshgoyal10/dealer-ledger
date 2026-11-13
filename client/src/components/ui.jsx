@@ -119,7 +119,7 @@ export function Stat({ label, value, tone = 'slate', sub }) {
 export function Balance({ value, className }) {
   const v = Number(value || 0);
   return (
-    <span className={cx('tabular font-bold', v > 0 ? 'text-rose-700' : v < 0 ? 'text-emerald-700' : 'text-slate-500', className)}>
+    <span className={cx('shrink-0 whitespace-nowrap tabular font-bold', v > 0 ? 'text-rose-700' : v < 0 ? 'text-emerald-700' : 'text-slate-500', className)}>
       {v < 0 ? `${inr(-v)} adv` : inr(v)}
     </span>
   );

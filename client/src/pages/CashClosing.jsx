@@ -5,7 +5,7 @@ import { useAuth } from '../auth/AuthContext';
 import { useApi } from '../hooks/useApi';
 import { api, errMsg } from '../api';
 import { Button, Card, Chip, Chips, Empty, ErrorBox, Field, Input, Modal, PageHeader, Segmented, Spinner, Stat, Textarea, cx } from '../components/ui';
-import { canEditTxn, daysAgoKey, fmtDate, fmtDateTime, inr, STATUS_CHIP, todayKey } from '../utils/format';
+import { canEditTxn, daysAgoKey, fmtDate, fmtDateTime, inr, STATUS_CHIP, todayKey, STATUS_LABEL } from '../utils/format';
 import TxnForm from '../components/TxnForm';
 import TxnList from '../components/TxnList';
 
@@ -118,15 +118,15 @@ function WorkerClosing({ embedded, version = 0 }) {
       )}
 
       <div className="mb-3 grid grid-cols-2 gap-2">
-        <Stat label={`Cash in app (${t.cashCount} entries)`} value={inr(t.systemCash)} tone="green" />
-        <Stat label={`Bank (${t.bankCount}) — not part of cash`} value={inr(t.bankTotal)} />
+        <Stat label={`Cash collected (${t.cashCount})`} value={inr(t.systemCash)} tone="green" />
+        <Stat label={`Bank collected (${t.bankCount})`} value={inr(t.bankTotal)} sub="Not part of cash" />
       </div>
 
       {t.closing && (
         <Card className="mb-3 p-3 text-sm">
           <div className="flex items-center justify-between">
             <span>Status</span>
-            <Chip className={STATUS_CHIP[t.closing.status]}>{t.closing.status}</Chip>
+            <Chip className={STATUS_CHIP[t.closing.status]}>{STATUS_LABEL[t.closing.status]}</Chip>
           </div>
           <div className="mt-1 text-xs text-slate-500">
             Submitted {fmtDateTime(t.closing.updatedAt)} • declared {inr(t.closing.declaredCash)}
@@ -175,9 +175,9 @@ function WorkerClosing({ embedded, version = 0 }) {
 
       <h2 className="mb-2 text-sm font-bold text-slate-700">Previous closings</h2>
       <Card>
-        {history.data?.length ? (
+        {(history.data || []).filter((c) => c.dateKey !== t.dateKey).length ? (
           <ul className="divide-y divide-slate-100">
-            {history.data.map((c) => (
+            {history.data.filter((c) => c.dateKey !== t.dateKey).map((c) => (
               <li key={c._id} className="flex items-center justify-between gap-2 px-4 py-2.5 text-sm">
                 <div>
                   <div>{fmtDate(c.date)}</div>
@@ -185,7 +185,7 @@ function WorkerClosing({ embedded, version = 0 }) {
                     Declared {inr(c.declaredCash)} • App {inr(c.systemCash)}
                   </div>
                 </div>
-                <Chip className={STATUS_CHIP[c.status]}>{c.status}</Chip>
+                <Chip className={STATUS_CHIP[c.status]}>{STATUS_LABEL[c.status]}</Chip>
               </li>
             ))}
           </ul>
@@ -239,7 +239,7 @@ function AdminClosings() {
                   <div className="flex items-center gap-2">
                     <span className="font-semibold">{c.worker?.name}</span>
                     <span className="text-slate-500">{fmtDate(c.date)}</span>
-                    <Chip className={STATUS_CHIP[c.status]}>{c.status}</Chip>
+                    <Chip className={STATUS_CHIP[c.status]}>{STATUS_LABEL[c.status]}</Chip>
                     {c.reopenCount > 0 && <Chip className="bg-amber-50 text-amber-800 ring-amber-300">Re-opened{c.reopenCount > 1 ? ` ×${c.reopenCount}` : ''}</Chip>}
                   </div>
                   {c.needsResubmit && (

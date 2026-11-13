@@ -91,7 +91,7 @@ export default function TxnForm({ open, onClose, onSaved, txn, customerId, defau
     <Modal
       open={open}
       onClose={onClose}
-      title={txn ? 'Edit entry' : 'New entry'}
+      title={txn ? `Edit ${TYPE_META[f.type].label.toLowerCase()}` : `New ${TYPE_META[f.type].label.toLowerCase()}`}
       footer={
         <>
           {txn && (
@@ -103,7 +103,7 @@ export default function TxnForm({ open, onClose, onSaved, txn, customerId, defau
             Cancel
           </Button>
           <Button type="submit" form="txn-form" loading={saving}>
-            Save
+            Save {TYPE_META[f.type].label.toLowerCase()}
           </Button>
         </>
       }
@@ -117,7 +117,7 @@ export default function TxnForm({ open, onClose, onSaved, txn, customerId, defau
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Amount (₹)">
-            <Input type="number" inputMode="decimal" min="0" step="0.01" value={f.amount} onChange={(e) => set('amount', e.target.value)} placeholder="0" autoFocus={!txn} required />
+            <Input type="number" inputMode="decimal" min="0" step="0.01" value={f.amount} onChange={(e) => set('amount', e.target.value)} placeholder="0" autoFocus={!txn && !!customerId} required />
           </Field>
           <Field as="div" label="Date">
             {isAdmin ? (

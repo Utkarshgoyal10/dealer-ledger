@@ -1,10 +1,8 @@
 import { useState } from 'react';
-import toast from 'react-hot-toast';
-import { Plus } from 'lucide-react';
+import { Plus, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { useApi } from '../hooks/useApi';
-import { api, errMsg } from '../api';
-import { Button, Card, Chips, Empty, ErrorBox, Field, Input, PageHeader, Pager, Spinner, Stat } from '../components/ui';
+import { Button, Card, Chips, cx, Empty, ErrorBox, Field, Input, PageHeader, Pager, Spinner, Stat } from '../components/ui';
 import TxnForm from '../components/TxnForm';
 import TxnList from '../components/TxnList';
 import CustomerPicker from '../components/CustomerPicker';
@@ -16,6 +14,7 @@ export default function Entries() {
   const [filters, setFilters] = useState({ from: daysAgoKey(29), to: todayKey(), type: '', paymentMode: '', worker: '', customer: '', mine: '' });
   const [page, setPage] = useState(1);
   const [form, setForm] = useState({ open: false });
+  const [showFilters, setShowFilters] = useState(false); // phone: filters folded away by default
 
   const params = Object.fromEntries(Object.entries({ ...filters, page }).filter(([, v]) => v !== ''));
   const { data, loading, error, reload } = useApi('/transactions', params);
@@ -29,6 +28,8 @@ export default function Entries() {
   };
 
   const tt = data?.totals;
+  // How many filters differ from the default (shown on the phone "Filters" button)
+  const activeFilters = ['type', 'worker', 'customer', 'mine'].filter((k) => filters[k]).length + (filters.from !== daysAgoKey(29) || filters.to !== todayKey() ? 1 : 0);
 
   return (
     <div>
@@ -42,7 +43,18 @@ export default function Entries() {
         }
       />
 
-      <Card className="mb-3 space-y-3 p-3">
+      <button
+        type="button"
+        onClick={() => setShowFilters((v) => !v)}
+        className="mb-3 flex w-full items-center justify-between rounded-xl bg-white px-4 py-3 text-sm font-bold ring-1 ring-slate-200 md:hidden"
+      >
+        <span className="flex items-center gap-2">
+          <SlidersHorizontal className="h-4 w-4 text-indigo-600" /> Filters
+          {activeFilters > 0 && <span className="rounded-full bg-indigo-600 px-2 text-xs leading-5 text-white">{activeFilters}</span>}
+        </span>
+        <ChevronDown className={cx('h-4 w-4 text-slate-400 transition-transform', showFilters && 'rotate-180')} />
+      </button>
+      <Card className={cx('mb-3 space-y-3 p-3', !showFilters && 'hidden md:block')}>
         <div className="grid grid-cols-2 gap-2">
           <Field label="From">
             <Input type="date" value={filters.from} onChange={set('from')} />
@@ -120,6 +132,7 @@ export default function Entries() {
         ) : data?.items.length ? (
           <TxnList
             items={data.items}
+            showBy={isAdmin}
             canEdit={(t) => canEditTxn(user, t)}
             onSelect={(t) => setForm({ open: true, txn: t })}
           />

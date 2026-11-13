@@ -101,6 +101,15 @@ export default function CustomerDetail() {
             <div className="text-right">
               <div className="text-xs text-slate-500">Outstanding</div>
               <Balance value={currentBalance} className="text-2xl" />
+              {!isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setReveal((r) => ({ ...r, bal: false }))}
+                  className="mt-0.5 flex w-full items-center justify-end gap-1 text-xs font-bold text-slate-500"
+                >
+                  <EyeOff className="h-3.5 w-3.5" /> Hide
+                </button>
+              )}
             </div>
           ) : (
             <button
@@ -123,11 +132,6 @@ export default function CustomerDetail() {
           {!isAdmin && (
             <Button size="sm" variant="secondary" onClick={() => setRequesting(true)}>
               <KeyRound className="h-4 w-4" /> Request older data
-            </Button>
-          )}
-          {!isAdmin && (reveal.bal || reveal.entries) && (
-            <Button size="sm" variant="secondary" onClick={() => setReveal({ bal: false, entries: false })}>
-              <EyeOff className="h-4 w-4" /> Hide
             </Button>
           )}
           {isAdmin && (
@@ -200,6 +204,18 @@ export default function CustomerDetail() {
           <Empty>No entries in this period</Empty>
         ) : (
           <>
+            {!isAdmin && (
+              <button
+                type="button"
+                onClick={() => setReveal((r) => ({ ...r, entries: false }))}
+                className="flex w-full items-center justify-between border-b border-slate-100 px-4 py-2 text-xs font-bold text-slate-500 md:hidden"
+              >
+                <span>{rows.length} entries</span>
+                <span className="flex items-center gap-1">
+                  <EyeOff className="h-3.5 w-3.5" /> Hide entries
+                </span>
+              </button>
+            )}
             {/* Phone: newest first, grouped by date, starting balance at the bottom */}
             <div className="md:hidden">
               {groupByDate([...rows].reverse()).map(([day, items]) => (

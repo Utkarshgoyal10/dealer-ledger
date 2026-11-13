@@ -45,6 +45,18 @@ export const STATUS_CHIP = {
   disputed: 'bg-rose-50 text-rose-700 ring-rose-200',
 };
 
+/** Plain words shown to users for each status */
+export const STATUS_LABEL = {
+  pending: 'Waiting for admin',
+  approved: 'Approved',
+  rejected: 'Rejected',
+  revoked: 'Access removed',
+  expired: 'Expired',
+  submitted: 'Waiting for check',
+  verified: 'Verified ✓',
+  disputed: 'Disputed',
+};
+
 /** Same rule as the server: worker can change own entry on the same day only */
 export function canEditTxn(user, t) {
   if (!user) return false;

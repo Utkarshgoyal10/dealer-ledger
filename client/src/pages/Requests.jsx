@@ -7,7 +7,7 @@ import { useApi } from '../hooks/useApi';
 import { api, errMsg } from '../api';
 import { Button, Card, Chip, Empty, ErrorBox, Field, Input, Modal, PageHeader, Segmented, Spinner, Textarea } from '../components/ui';
 import RequestForm from '../components/RequestForm';
-import { fmtDate, fmtDateTime, STATUS_CHIP } from '../utils/format';
+import { fmtDate, fmtDateTime, STATUS_CHIP, STATUS_LABEL } from '../utils/format';
 
 function statusOf(r) {
   if (r.status === 'approved' && !r.isActive) return 'expired';
@@ -64,7 +64,7 @@ export default function Requests() {
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <Chip className={STATUS_CHIP[st]}>{st}</Chip>
+                        <Chip className={STATUS_CHIP[st]}>{STATUS_LABEL[st]}</Chip>
                         <Link to={`/customers/${r.customer?._id}`} className="text-sm font-semibold hover:underline">
                           {r.customer?.shopName}
                         </Link>

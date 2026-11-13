@@ -23,7 +23,7 @@ export default function Dashboard() {
             <Link to="/logins">
               <Card className="flex items-center gap-3 bg-indigo-50 p-3 ring-indigo-200">
                 <LogIn className="h-5 w-5 text-indigo-700" />
-                <span className="text-sm font-semibold text-indigo-900">{d.pendingLogins} salesman login(s) waiting</span>
+                <span className="text-sm font-semibold text-indigo-900">{d.pendingLogins} salesman login{d.pendingLogins === 1 ? '' : 's'} waiting for approval</span>
               </Card>
             </Link>
           )}
@@ -31,7 +31,7 @@ export default function Dashboard() {
             <Link to="/requests">
               <Card className="flex items-center gap-3 bg-amber-50 p-3 ring-amber-200">
                 <KeyRound className="h-5 w-5 text-amber-700" />
-                <span className="text-sm font-semibold text-amber-900">{d.pendingRequests} data access request(s) waiting</span>
+                <span className="text-sm font-semibold text-amber-900">{d.pendingRequests} old-data request{d.pendingRequests === 1 ? '' : 's'} waiting</span>
               </Card>
             </Link>
           )}
@@ -39,7 +39,7 @@ export default function Dashboard() {
             <Link to="/cash">
               <Card className="flex items-center gap-3 bg-amber-50 p-3 ring-amber-200">
                 <Wallet className="h-5 w-5 text-amber-700" />
-                <span className="text-sm font-semibold text-amber-900">{d.pendingClosings} cash closing(s) to verify</span>
+                <span className="text-sm font-semibold text-amber-900">{d.pendingClosings} cash closing{d.pendingClosings === 1 ? '' : 's'} to verify</span>
               </Card>
             </Link>
           )}
@@ -63,7 +63,7 @@ export default function Dashboard() {
         <Stat label="Total outstanding" value={inr(d.totalOutstanding)} tone="rose" sub={`${d.customerCount} dealers`} />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card>
           <h3 className="border-b border-slate-100 px-4 py-3 text-sm font-bold">Last 7 days</h3>
           <table className="w-full text-sm">
@@ -92,8 +92,8 @@ export default function Dashboard() {
             {d.topCustomers.length === 0 && <li className="px-4 py-6 text-center text-slate-500">No sales yet</li>}
             {d.topCustomers.map((c) => (
               <li key={c._id}>
-                <Link to={`/customers/${c._id}`} className="flex justify-between gap-2 px-4 py-2 hover:bg-slate-50">
-                  <span className="truncate">{c.shopName}</span>
+                <Link to={`/customers/${c._id}`} className="flex items-center justify-between gap-2 px-4 py-2 hover:bg-slate-50">
+                  <span className="min-w-0 flex-1 truncate">{c.shopName}</span>
                   <span className="tabular font-semibold">{inr(c.amount)}</span>
                 </Link>
               </li>
@@ -107,8 +107,8 @@ export default function Dashboard() {
             {d.topDue.length === 0 && <li className="px-4 py-6 text-center text-slate-500">No dues</li>}
             {d.topDue.map((c) => (
               <li key={c._id}>
-                <Link to={`/customers/${c._id}`} className="flex justify-between gap-2 px-4 py-2 hover:bg-slate-50">
-                  <span className="truncate">
+                <Link to={`/customers/${c._id}`} className="flex items-center justify-between gap-2 px-4 py-2 hover:bg-slate-50">
+                  <span className="min-w-0 flex-1 truncate">
                     {c.shopName}
                     {c.route && <span className="text-xs text-slate-500"> • {c.route}</span>}
                   </span>

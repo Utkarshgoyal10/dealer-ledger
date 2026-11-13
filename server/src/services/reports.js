@@ -78,7 +78,7 @@ export async function summaryReport(q) {
     money('scheme', 'Scheme'),
     money('cash', 'Cash'),
     money('bank', 'Bank'),
-    money('collection', 'Total collected'),
+    money('collection', 'Collected'),
   ];
   return {
     title: `Sales summary (${group === 'month' ? 'monthly' : 'daily'})`,
@@ -111,7 +111,7 @@ export async function workersReport(q) {
     money('scheme', 'Scheme'),
     money('cash', 'Cash'),
     money('bank', 'Bank'),
-    money('collection', 'Total collected'),
+    money('collection', 'Collected'),
   ];
   return {
     title: 'Salesman-wise performance',
@@ -158,7 +158,7 @@ export async function collectionsReport(q) {
     { key: 'date', label: 'Date', type: 'text' },
     money('cash', 'Cash'),
     money('bank', 'Bank'),
-    money('collection', 'Total collected'),
+    money('collection', 'Collected'),
   ];
   return {
     title: 'Cash vs bank collections',
