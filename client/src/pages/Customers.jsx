@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, ChevronRight } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../auth/AuthContext';
@@ -13,8 +13,22 @@ export default function Customers() {
   const nav = useNavigate();
   const { user } = useAuth();
   const isAdmin = user.role === 'admin'; // only admin sees balances in the list
-  const [route, setRoute] = useState('');
-  const [sort, setSort] = useState('name');
+  // Route + sort live in the page address, so Back from a dealer returns to the same route
+  const [params, setParams] = useSearchParams();
+  const route = params.get('route') || '';
+  const sort = params.get('sort') || 'name';
+  const setParam = (key, value, empty) =>
+    setParams(
+      (p) => {
+        const n = new URLSearchParams(p);
+        if (!value || value === empty) n.delete(key);
+        else n.set(key, value);
+        return n;
+      },
+      { replace: true }
+    );
+  const setRoute = (v) => setParam('route', v, '');
+  const setSort = (v) => setParam('sort', v, 'name');
   const [adding, setAdding] = useState(false);
 
   const { data, loading, error, reload } = useApi('/customers');
