@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { KeyRound, LogIn, Wallet } from 'lucide-react';
+import { KeyRound, LogIn, Wallet, PenLine } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { Balance, Card, ErrorBox, PageHeader, Spinner, Stat } from '../components/ui';
 import { fmtDate, inr } from '../utils/format';
@@ -17,7 +17,7 @@ export default function Dashboard() {
       <InstallApp />
       <NotificationSetup compact />
 
-      {(d.pendingLogins > 0 || d.pendingRequests > 0 || d.pendingClosings > 0) && (
+      {(d.pendingLogins > 0 || d.pendingRequests > 0 || d.pendingClosings > 0 || d.openDisputes > 0 || d.toApprove > 0) && (
         <div className="mb-4 grid gap-2 sm:grid-cols-3">
           {d.pendingLogins > 0 && (
             <Link to="/logins">
@@ -40,6 +40,22 @@ export default function Dashboard() {
               <Card className="flex items-center gap-3 bg-amber-50 p-3 ring-amber-200">
                 <Wallet className="h-5 w-5 text-amber-700" />
                 <span className="text-sm font-semibold text-amber-900">{d.pendingClosings} cash closing{d.pendingClosings === 1 ? '' : 's'} to verify</span>
+              </Card>
+            </Link>
+          )}
+          {d.toApprove > 0 && (
+            <Link to="/confirmations?tab=approve">
+              <Card className="flex items-center gap-3 bg-emerald-50 p-3 ring-emerald-200">
+                <PenLine className="h-5 w-5 text-emerald-700" />
+                <span className="text-sm font-semibold text-emerald-900">{d.toApprove} signed confirmation{d.toApprove === 1 ? '' : 's'} to approve</span>
+              </Card>
+            </Link>
+          )}
+          {d.openDisputes > 0 && (
+            <Link to="/confirmations?tab=disputed">
+              <Card className="flex items-center gap-3 bg-rose-50 p-3 ring-rose-200">
+                <PenLine className="h-5 w-5 text-rose-700" />
+                <span className="text-sm font-semibold text-rose-900">{d.openDisputes} dealer{d.openDisputes === 1 ? '' : 's'} disputed balance</span>
               </Card>
             </Link>
           )}

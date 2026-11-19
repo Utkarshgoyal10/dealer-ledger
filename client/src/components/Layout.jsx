@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
-  Home, Users, ReceiptText, KeyRound, Wallet, BarChart3, UserCog, History, MoreHorizontal, LogOut, UserCircle, LogIn, CalendarCheck,
+  Home, Users, ReceiptText, KeyRound, Wallet, BarChart3, UserCog, History, MoreHorizontal, LogOut, UserCircle, LogIn, CalendarCheck, PenLine,
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { api } from '../api';
@@ -21,6 +21,7 @@ const ADMIN_NAV = [
   { to: '/entries', label: 'Entries', icon: ReceiptText },
   { to: '/requests', label: 'Data requests', icon: KeyRound, badge: 'requests' },
   { to: '/cash', label: 'Cash closing', icon: Wallet, badge: 'closings' },
+  { to: '/confirmations', label: 'Confirmations', icon: PenLine, badge: 'disputes' },
   { to: '/reports', label: 'Reports', icon: BarChart3 },
   { to: '/workers', label: 'Users', icon: UserCog },
   { to: '/audit', label: 'Audit log', icon: History },
@@ -36,8 +37,12 @@ function useBadges(isAdmin) {
         api.get('/login-requests/pending-count'),
         api.get('/access-requests/pending-count'),
         api.get('/cash-closings', { params: { status: 'submitted' } }),
+        api.get('/confirmations', { params: { open: 'true', limit: 50 } }),
+        api.get('/confirmations', { params: { toApprove: 'true', limit: 100 } }),
       ])
-        .then(([l, r, c]) => setBadges({ logins: l.data.count, requests: r.data.count, closings: c.data.length }))
+        .then(([l, r, c, d, a]) =>
+          setBadges({ logins: l.data.count, requests: r.data.count, closings: c.data.length, disputes: d.data.length + a.data.length })
+        )
         .catch(() => {});
     load();
     // Worker logins need quick approval, so keep checking
@@ -148,7 +153,7 @@ export default function Layout() {
             >
               <MoreHorizontal className="h-5 w-5" />
               {moreActive?.label || 'More'}
-              {badges.closings || badges.requests ? <span className="absolute top-1 right-[calc(50%-18px)] h-2 w-2 rounded-full bg-rose-600" /> : null}
+              {badges.closings || badges.requests || badges.disputes ? <span className="absolute top-1 right-[calc(50%-18px)] h-2 w-2 rounded-full bg-rose-600" /> : null}
             </button>
           )}
         </div>

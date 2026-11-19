@@ -17,6 +17,7 @@ import reportRoutes from './routes/reports.js';
 import auditRoutes from './routes/audit.js';
 import loginRequestRoutes from './routes/loginRequests.js';
 import pushRoutes from './routes/push.js';
+import confirmationRoutes from './routes/confirmations.js';
 
 export function createApp() {
   const app = express();
@@ -36,6 +37,7 @@ export function createApp() {
   app.use('/api/audit', requireAuth, auditRoutes);
   app.use('/api/login-requests', requireAuth, loginRequestRoutes);
   app.use('/api/push', requireAuth, pushRoutes);
+  app.use('/api/confirmations', requireAuth, confirmationRoutes);
   app.use('/api', (req, res) => res.status(404).json({ message: 'Not found' }));
 
   // Optional: serve the built React app from the same server (single deployment)

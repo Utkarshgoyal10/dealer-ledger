@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { Confirmation } from '../models/Confirmation.js';
 import { Transaction } from '../models/Transaction.js';
 import { Customer } from '../models/Customer.js';
 import { User } from '../models/User.js';
@@ -244,7 +245,7 @@ export async function adminDashboard() {
   const monthStart = parseDateKey(istDateKey(today).slice(0, 8) + '01');
   const weekStart = addDays(today, -6);
 
-  const [todayMap, monthMap, trendMap, customers, pendingRequests, pendingClosings, pendingLogins] = await Promise.all([
+  const [todayMap, monthMap, trendMap, customers, pendingRequests, pendingClosings, pendingLogins, openDisputes, toApprove] = await Promise.all([
     pivot({ date: today }, 'all'),
     pivot({ date: { $gte: monthStart, $lte: istDayEnd(today) } }, 'all'),
     pivot({ date: { $gte: weekStart, $lte: istDayEnd(today) } }, { $dateToString: { format: '%Y-%m-%d', date: '$date', timezone: TZ } }),
@@ -252,6 +253,8 @@ export async function adminDashboard() {
     AccessRequest.countDocuments({ status: 'pending' }),
     CashClosing.countDocuments({ status: 'submitted' }),
     LoginRequest.countDocuments({ status: 'pending', dateKey: istDateKey(today) }),
+    Confirmation.countDocuments({ status: 'disputed', resolvedAt: null }),
+    Confirmation.countDocuments({ status: 'confirmed', approvedAt: null }),
   ]);
 
   const balances = await computeBalances(customers);
@@ -294,6 +297,8 @@ export async function adminDashboard() {
     pendingRequests,
     pendingClosings,
     pendingLogins,
+    openDisputes,
+    toApprove,
     topCustomers,
     topDue,
     trend,

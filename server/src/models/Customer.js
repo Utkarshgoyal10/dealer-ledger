@@ -8,6 +8,8 @@ const customerSchema = new mongoose.Schema(
     openingBalance: { type: Number, default: 0 },
     // Admin can hide this dealer's balance from salesmen (they can still add entries)
     hideBalance: { type: Boolean, default: false },
+    // Months ('YYYY-MM') the admin chose to skip the balance confirmation for this dealer
+    confirmSkips: { type: [String], default: [] },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     deleted: { type: Boolean, default: false },
     deletedAt: Date,

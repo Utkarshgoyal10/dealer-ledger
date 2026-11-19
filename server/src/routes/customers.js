@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { confirmStatusMap } from '../services/confirmStatus.js';
 import { z } from 'zod';
 import { Customer } from '../models/Customer.js';
 import { Route, routeKey } from '../models/Route.js';
@@ -43,10 +44,12 @@ router.get('/', async (req, res) => {
   if (req.query.route) filter.route = req.query.route;
   if (req.query.q) filter.shopName = new RegExp(escapeRegex(String(req.query.q).trim()), 'i');
   const customers = await Customer.find(filter).sort({ shopName: 1 }).lean();
-  // Workers see a dealer's balance only after opening that dealer, not in the list
-  if (req.user.role !== 'admin') return res.json(customers.map(({ openingBalance, ...c }) => c));
   const balances = await computeBalances(customers);
-  res.json(customers.map((c) => ({ ...c, balance: balances.get(String(c._id)) })));
+  const worker = req.user.role !== 'admin';
+  const cst = await confirmStatusMap(customers, balances, { forWorker: worker });
+  // Workers see a dealer's balance only after opening that dealer, not in the list
+  if (worker) return res.json(customers.map(({ openingBalance, confirmSkips, ...c }) => ({ ...c, confirmStatus: cst.get(String(c._id)) })));
+  res.json(customers.map((c) => ({ ...c, balance: balances.get(String(c._id)), confirmStatus: cst.get(String(c._id)) })));
 });
 
 /** Salesman + dealer marked "hide balance" -> balance figures are never sent to the phone */

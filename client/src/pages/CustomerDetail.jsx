@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
+import ConfirmationView, { CONFIRM_STATUS } from '../components/ConfirmationView';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Pencil, Plus, KeyRound, Trash2, Lock, Eye, EyeOff, ShoppingCart, Undo2, Wallet, Gift } from 'lucide-react';
+import { ArrowLeft, Pencil, Plus, KeyRound, Trash2, Lock, Eye, EyeOff, PenLine, ShoppingCart, Undo2, Wallet, Gift } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { useApi } from '../hooks/useApi';
 import { api, errMsg } from '../api';
@@ -39,6 +40,8 @@ export default function CustomerDetail() {
   const [txnForm, setTxnForm] = useState({ open: false });
   const [editing, setEditing] = useState(false);
   const [requesting, setRequesting] = useState(false);
+  const confirm = useApi(`/confirmations/status/${id}`);
+  const [viewingConf, setViewingConf] = useState(null);
 
   // Salesman: balance and entries stay covered until tapped, so a dealer looking at the
   // phone sees nothing by accident. Covered again on another dealer / when the app is left.
@@ -146,6 +149,26 @@ export default function CustomerDetail() {
           )}
         </div>
       </Card>
+
+      {confirm.data && (
+        <ConfirmStrip
+          s={confirm.data}
+          isAdmin={isAdmin}
+          balanceHidden={balanceHidden}
+          onSign={() => nav(`/customers/${id}/confirm`)}
+          onView={() => setViewingConf(confirm.data.last._id)}
+          onSkip={async (skip) => {
+            try {
+              await api.post('/confirmations/skip', { customer: id, skip });
+              toast.success(skip ? 'Skipped for this month' : 'Skip removed');
+              confirm.reload();
+            } catch (e) {
+              toast.error(errMsg(e));
+            }
+          }}
+        />
+      )}
+      <ConfirmationView id={viewingConf} onClose={() => setViewingConf(null)} onChanged={confirm.reload} />
 
       {visibility && (
         <div className="mb-3 flex items-start gap-2 rounded-lg bg-indigo-50 px-3 py-2 text-xs text-indigo-900 ring-1 ring-indigo-100">
@@ -304,6 +327,36 @@ export default function CustomerDetail() {
       <TxnForm open={txnForm.open} txn={txnForm.txn} customerId={id} onClose={() => setTxnForm({ open: false })} onSaved={ledger.reload} />
       {isAdmin && <CustomerForm open={editing} customer={c} onClose={() => setEditing(false)} onSaved={ledger.reload} />}
       {!isAdmin && <RequestForm open={requesting} customerId={id} onClose={() => setRequesting(false)} />}
+    </div>
+  );
+}
+
+/** "This month: confirmed / due / skipped" + Get confirmation button on the dealer page */
+function ConfirmStrip({ s, isAdmin, balanceHidden, onSign, onView, onSkip }) {
+  const meta = CONFIRM_STATUS[s.monthStatus];
+  const canSign = isAdmin || !balanceHidden;
+  return (
+    <div className="mb-3 rounded-xl bg-white px-3 py-2.5 ring-1 ring-slate-200">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <Chip className={meta.chip}>{meta.label}</Chip>
+          {s.last && (
+            <button type="button" onClick={onView} className="mt-1 block truncate text-left text-xs text-slate-500 underline">
+              Last: {s.last.status === 'confirmed' ? 'signed' : 'disputed'} {fmtDate(s.last.createdAt)} • {inr(s.last.closingBalance)}
+            </button>
+          )}
+        </div>
+        {canSign && (
+          <Button size="sm" variant={s.monthStatus === 'due' || s.monthStatus === 'disputed' ? 'primary' : 'secondary'} onClick={onSign}>
+            <PenLine className="h-4 w-4" /> Get confirmation
+          </Button>
+        )}
+      </div>
+      {isAdmin && (s.monthStatus === 'due' || s.monthStatus === 'skipped') && (
+        <button type="button" onClick={() => onSkip(s.monthStatus === 'due')} className="mt-1.5 text-xs font-bold text-slate-500 underline">
+          {s.monthStatus === 'due' ? 'Skip confirmation this month' : 'Undo skip'}
+        </button>
+      )}
     </div>
   );
 }

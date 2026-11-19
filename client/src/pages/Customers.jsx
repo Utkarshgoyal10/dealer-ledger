@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, ChevronRight } from 'lucide-react';
+import { Plus, ChevronRight, PenLine } from 'lucide-react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../auth/AuthContext';
 import { Balance, Button, Card, Chips, Empty, ErrorBox, PageHeader, Spinner } from '../components/ui';
@@ -29,13 +29,16 @@ export default function Customers() {
     );
   const setRoute = (v) => setParam('route', v, '');
   const setSort = (v) => setParam('sort', v, 'name');
+  const dueOnly = params.get('due') === '1';
+  const setDueOnly = (v) => setParam('due', v ? '1' : '', '');
   const [adding, setAdding] = useState(false);
 
   const { data, loading, error, reload } = useApi('/customers');
   const list = useMemo(() => {
-    const l = (data || []).filter((c) => !route || c.route === route);
+    const l = (data || []).filter((c) => (!route || c.route === route) && (!dueOnly || c.confirmStatus === 'due' || c.confirmStatus === 'disputed'));
     return isAdmin && sort === 'due' ? [...l].sort((a, b) => b.balance - a.balance) : l;
-  }, [data, route, sort, isAdmin]);
+  }, [data, route, sort, isAdmin, dueOnly]);
+  const dueCount = (data || []).filter((c) => (!route || c.route === route) && (c.confirmStatus === 'due' || c.confirmStatus === 'disputed')).length;
   const totalDue = list.reduce((s, c) => s + (c.balance > 0 ? c.balance : 0), 0);
 
   return (
@@ -77,6 +80,22 @@ export default function Customers() {
         </div>
       )}
 
+      {(dueCount > 0 || dueOnly) && (
+        <button
+          type="button"
+          onClick={() => setDueOnly(!dueOnly)}
+          className={`mb-3 flex w-full items-center justify-between rounded-xl px-4 py-2.5 text-sm font-bold ring-1 ${
+            dueOnly ? 'bg-amber-500 text-white ring-amber-500' : 'bg-amber-50 text-amber-900 ring-amber-200'
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            <PenLine className="h-4 w-4" />
+            {dueOnly ? `Showing ${dueCount} dealer${dueCount === 1 ? '' : 's'} to confirm` : `${dueCount} dealer${dueCount === 1 ? '' : 's'} still to confirm this month`}
+          </span>
+          <span className="text-xs font-semibold underline">{dueOnly ? 'Show all' : 'Show'}</span>
+        </button>
+      )}
+
       <ErrorBox>{error}</ErrorBox>
       <Card>
         {loading && !data ? (
@@ -94,6 +113,14 @@ export default function Customers() {
                       {c.route || 'No route'}
                       {isAdmin && c.hideBalance && <span className="ml-1.5 text-amber-700">• balance hidden from salesmen</span>}
                     </div>
+                    {c.confirmStatus === 'due' && (
+                      <div className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-bold text-amber-700">
+                        <PenLine className="h-3 w-3" /> Confirm balance this month
+                      </div>
+                    )}
+                    {c.confirmStatus === 'disputed' && (
+                      <div className="mt-0.5 text-[11px] font-bold text-rose-700">⚠ Dealer disputed balance — check</div>
+                    )}
                   </div>
                   {isAdmin && <Balance value={c.balance} className="text-sm" />}
                   <ChevronRight className="h-4 w-4 text-slate-300" />
