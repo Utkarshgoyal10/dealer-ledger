@@ -342,8 +342,14 @@ function ConfirmStrip({ s, isAdmin, balanceHidden, onSign, onView, onSkip }) {
           <Chip className={meta.chip}>{meta.label}</Chip>
           {s.last && (
             <button type="button" onClick={onView} className="mt-1 block truncate text-left text-xs text-slate-500 underline">
-              Last: {s.last.status === 'confirmed' ? 'signed' : 'disputed'} {fmtDate(s.last.createdAt)} • {inr(s.last.closingBalance)}
+              Last: {s.last.status === 'disputed' ? 'disputed' : s.last.rejectedAt ? 'rejected by admin' : s.last.approvedAt ? 'signed & approved' : 'signed'}{' '}
+              {fmtDate(s.last.createdAt)} • {inr(s.last.closingBalance)}
             </button>
+          )}
+          {s.lockedAt && (
+            <div className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-500">
+              <Lock className="h-3 w-3" /> Entries before {fmtDateTime(s.lockedAt)} are locked (dealer signed)
+            </div>
           )}
         </div>
         {canSign && (

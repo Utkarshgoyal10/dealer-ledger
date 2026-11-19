@@ -38,6 +38,23 @@ export default function ConfirmationView({ id, onClose, onChanged }) {
     }
   };
 
+  const [rejecting, setRejecting] = useState(false);
+  const reject = async () => {
+    setBusy(true);
+    try {
+      await api.post(`/confirmations/${id}/reject`, { reason: note });
+      toast.success('Rejected — entries unlocked, take a fresh signature');
+      setRejecting(false);
+      setNote('');
+      reload();
+      onChanged?.();
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const resolve = async () => {
     setBusy(true);
     try {
@@ -67,8 +84,8 @@ export default function ConfirmationView({ id, onClose, onChanged }) {
                 {fmtDateTime(c.createdAt)} • by {c.createdBy?.name}
               </div>
             </div>
-            <Chip className={c.status === 'confirmed' ? CONFIRM_STATUS.done.chip : CONFIRM_STATUS.disputed.chip}>
-              {c.status === 'confirmed' ? (c.approvedAt ? 'Signed • approved ✓' : 'Signed • waiting for admin') : c.resolvedAt ? 'Disputed • resolved' : 'Disputed'}
+            <Chip className={c.status === 'confirmed' && !c.rejectedAt ? CONFIRM_STATUS.done.chip : CONFIRM_STATUS.disputed.chip}>
+              {c.status === 'confirmed' ? (c.rejectedAt ? 'Rejected by admin' : c.approvedAt ? 'Signed • approved ✓' : 'Signed • waiting for admin') : c.resolvedAt ? 'Disputed • resolved' : 'Disputed'}
             </Chip>
           </div>
 
@@ -113,21 +130,59 @@ export default function ConfirmationView({ id, onClose, onChanged }) {
             </div>
           </details>
 
-          {c.status === 'confirmed' &&
-            (c.approvedAt ? (
+          {c.status === 'confirmed' && c.rejectedAt && (
+            <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-900 ring-1 ring-rose-200">
+              <div className="text-xs font-bold">
+                Rejected by {c.rejectedBy?.name} on {fmtDateTime(c.rejectedAt)}
+              </div>
+              {c.rejectReason}
+            </div>
+          )}
+          {c.status === 'confirmed' && !c.rejectedAt && c.approvedAt && (
+            <div className="space-y-1">
               <div className="text-xs text-emerald-700">
                 Approved by {c.approvedBy?.name} on {fmtDateTime(c.approvedAt)}
               </div>
-            ) : (
+              {user.role === 'admin' && !rejecting && (
+                <button type="button" onClick={() => setRejecting(true)} className="text-xs font-bold text-rose-700 underline">
+                  Found a mistake later? Reject this confirmation
+                </button>
+              )}
+            </div>
+          )}
+          {c.status === 'confirmed' && !c.rejectedAt && user.role === 'admin' && rejecting && (
+            <div className="space-y-2 rounded-lg bg-rose-50 p-3 ring-1 ring-rose-200">
+              <Field label="Why are you rejecting? (required)">
+                <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. ₹2,000 sale on 15 Nov missing in app" autoFocus />
+              </Field>
+              <div className="flex gap-2">
+                <Button variant="danger" loading={busy} disabled={note.trim().length < 3} onClick={reject}>
+                  Reject confirmation
+                </Button>
+                <Button variant="ghost" onClick={() => setRejecting(false)}>
+                  Cancel
+                </Button>
+              </div>
+              <p className="text-xs text-slate-600">This unlocks the signed entries so they can be corrected. Then take a fresh signature from the dealer.</p>
+            </div>
+          )}
+          {c.status === 'confirmed' &&
+            !c.rejectedAt &&
+            !rejecting &&
+            (c.approvedAt ? null : (
               user.role === 'admin' && (
                 <div className="space-y-2 rounded-lg bg-emerald-50 p-3 ring-1 ring-emerald-200">
                   <p className="text-sm text-emerald-900">
                     Check <b>{inr(c.closingBalance)}</b> against your books, then approve.
                   </p>
-                  <Button variant="success" loading={busy} onClick={approve}>
-                    Approve — balance is correct
-                  </Button>
-                  <p className="text-xs text-slate-500">If it's wrong, correct the entries and ask the salesman to take a fresh signature.</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="success" loading={busy} onClick={approve}>
+                      Approve — correct
+                    </Button>
+                    <Button variant="secondary" className="text-rose-700" onClick={() => setRejecting(true)}>
+                      Reject — not matching
+                    </Button>
+                  </div>
                 </div>
               )
             ))}

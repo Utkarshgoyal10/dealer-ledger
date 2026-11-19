@@ -8,6 +8,7 @@ import { badRequest, forbidden, notFound } from '../utils/http.js';
 import { audit } from '../services/audit.js';
 import { getWorkerAccess, isTxnVisibleToWorker, workerTxnFilter } from '../services/access.js';
 import { reopenClosingIfVerified } from '../services/cashClosing.js';
+import { assertNotLocked } from '../services/confirmLock.js';
 import { addDays, istDayStart, istDayEnd, istDateKey, isSameIstDay, parseDateKey } from '../utils/dates.js';
 
 const router = Router();
@@ -124,6 +125,7 @@ router.post('/', async (req, res) => {
     date = data.date ? parseDateKey(data.date) : istDayStart();
     worker = data.worker || null;
   }
+  await assertNotLocked(customer._id, { date }); // can't add into a period the dealer signed
 
   const txn = await Transaction.create({
     type: data.type,
@@ -173,6 +175,7 @@ router.patch('/:id', async (req, res) => {
   const data = baseSchema.partial().parse(req.body);
   const txn = await loadForChange(req);
   const before = txn.toObject();
+  await assertNotLocked(txn.customer, { date: txn.date, createdAt: txn.createdAt }); // original place
 
   if (data.customer && String(data.customer) !== String(txn.customer)) {
     const c = await Customer.findOne({ _id: data.customer, deleted: false });
@@ -189,6 +192,7 @@ router.patch('/:id', async (req, res) => {
     if (data.date) txn.date = workerDate(data.date);
   }
   Object.assign(txn, normalisePayment(data, before));
+  await assertNotLocked(txn.customer, { date: txn.date }); // new place (if dealer/date changed)
 
   await txn.save();
   await audit(req, { action: 'update', entity: 'Transaction', entityId: txn._id, summary: `Edited ${LABEL[txn.type]} ₹${txn.amount}`, before, after: txn });
@@ -198,6 +202,7 @@ router.patch('/:id', async (req, res) => {
 // ---------- soft delete ----------
 router.delete('/:id', async (req, res) => {
   const txn = await loadForChange(req);
+  await assertNotLocked(txn.customer, { date: txn.date, createdAt: txn.createdAt });
   txn.deleted = true;
   txn.deletedAt = new Date();
   txn.deletedBy = req.user._id;

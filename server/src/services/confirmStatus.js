@@ -18,7 +18,7 @@ export async function confirmStatusMap(customers, balances, { forWorker = false 
   const rows = await Confirmation.aggregate([
     { $match: { customer: { $in: customers.map((c) => c._id) }, createdAt: { $gte: from } } },
     { $sort: { createdAt: -1 } },
-    { $group: { _id: '$customer', confirmed: { $max: { $cond: [{ $eq: ['$status', 'confirmed'] }, 1, 0] } }, latest: { $first: '$$ROOT' } } },
+    { $group: { _id: '$customer', confirmed: { $max: { $cond: [{ $and: [{ $eq: ['$status', 'confirmed'] }, { $eq: [{ $ifNull: ['$rejectedAt', null] }, null] }] }, 1, 0] } }, latest: { $first: '$$ROOT' } } },
   ]);
   const byId = new Map(rows.map((r) => [String(r._id), r]));
   const out = new Map();

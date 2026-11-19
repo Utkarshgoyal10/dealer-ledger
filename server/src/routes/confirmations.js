@@ -10,6 +10,7 @@ import { workerWindowStart } from '../services/access.js';
 import { istDayStart, istDateKey, parseDateKey } from '../utils/dates.js';
 import { notifyAdmins } from '../services/push.js';
 import { confirmStatusMap, monthKey } from '../services/confirmStatus.js';
+import { getLock } from '../services/confirmLock.js';
 
 const router = Router();
 const isAdmin = (req) => req.user.role === 'admin';
@@ -25,7 +26,7 @@ async function statementFor(req, customerId) {
   if (!customer) throw notFound('Dealer not found');
   if (!isAdmin(req) && customer.hideBalance) throw forbidden("This dealer's balance is handled by admin");
 
-  const last = await Confirmation.findOne({ customer: customer._id, status: 'confirmed' }).sort({ createdAt: -1 }).lean();
+  const last = await Confirmation.findOne({ customer: customer._id, status: 'confirmed', rejectedAt: null }).sort({ createdAt: -1 }).lean();
   let from = last ? istDayStart(last.createdAt) : parseDateKey(istDateKey().slice(0, 8) + '01');
   if (!isAdmin(req)) {
     const win = workerWindowStart();
@@ -107,7 +108,7 @@ router.get('/', async (req, res) => {
   if (req.query.customer) filter.customer = req.query.customer;
   if (req.query.status) filter.status = req.query.status;
   if (req.query.open === 'true') Object.assign(filter, { status: 'disputed', resolvedAt: null });
-  if (req.query.toApprove === 'true') Object.assign(filter, { status: 'confirmed', approvedAt: null });
+  if (req.query.toApprove === 'true') Object.assign(filter, { status: 'confirmed', approvedAt: null, rejectedAt: null });
   const items = await Confirmation.find(filter, { signature: 0, entries: 0 })
     .sort({ createdAt: -1 })
     .limit(Math.min(Number(req.query.limit) || 100, 300))
@@ -122,7 +123,7 @@ router.get('/overview', adminOnly, async (req, res) => {
   const customers = await Customer.find({ deleted: false }).sort({ shopName: 1 }).lean();
   const latest = await Confirmation.aggregate([
     { $sort: { createdAt: -1 } },
-    { $group: { _id: '$customer', doc: { $first: '$$ROOT' }, lastConfirmed: { $max: { $cond: [{ $eq: ['$status', 'confirmed'] }, '$createdAt', null] } } } },
+    { $group: { _id: '$customer', doc: { $first: '$$ROOT' }, lastConfirmed: { $max: { $cond: [{ $and: [{ $eq: ['$status', 'confirmed'] }, { $eq: [{ $ifNull: ['$rejectedAt', null] }, null] }] }, '$createdAt', null] } } } },
   ]);
   const byId = new Map(latest.map((l) => [String(l._id), l]));
   const balances = await computeBalances(customers);
@@ -139,7 +140,7 @@ router.get('/overview', adminOnly, async (req, res) => {
         balance: balances.get(String(c._id)),
         lastConfirmedAt: l?.lastConfirmed || null,
         latest: l
-          ? { _id: l.doc._id, status: l.doc.status, createdAt: l.doc.createdAt, closingBalance: l.doc.closingBalance, resolvedAt: l.doc.resolvedAt || null, approvedAt: l.doc.approvedAt || null }
+          ? { _id: l.doc._id, status: l.doc.status, createdAt: l.doc.createdAt, closingBalance: l.doc.closingBalance, resolvedAt: l.doc.resolvedAt || null, approvedAt: l.doc.approvedAt || null, rejectedAt: l.doc.rejectedAt || null }
           : null,
       };
     })
@@ -153,7 +154,8 @@ router.get('/status/:customerId', async (req, res) => {
   const balances = await computeBalances([c]);
   const st = (await confirmStatusMap([c], balances, { forWorker: !isAdmin(req) })).get(String(c._id));
   const last = await Confirmation.findOne({ customer: c._id }, { signature: 0, entries: 0 }).sort({ createdAt: -1 }).populate('createdBy', 'name').lean();
-  res.json({ monthStatus: st, month: monthKey(), skipped: (c.confirmSkips || []).includes(monthKey()), last: last && (isAdmin(req) || !c.hideBalance) ? last : null });
+  const lock = await getLock(c._id);
+  res.json({ lockedAt: lock?.at || null, monthStatus: st, month: monthKey(), skipped: (c.confirmSkips || []).includes(monthKey()), last: last && (isAdmin(req) || !c.hideBalance) ? last : null });
 });
 
 // Admin: skip (or un-skip) this month's confirmation for a dealer
@@ -173,7 +175,7 @@ router.post('/skip', adminOnly, async (req, res) => {
 
 // One confirmation with signature + entries
 router.get('/:id', async (req, res) => {
-  const doc = await Confirmation.findById(req.params.id).populate('customer', 'shopName route').populate('createdBy', 'name').populate('resolvedBy', 'name').populate('approvedBy', 'name').lean();
+  const doc = await Confirmation.findById(req.params.id).populate('customer', 'shopName route').populate('createdBy', 'name').populate('resolvedBy', 'name').populate('approvedBy', 'name').populate('rejectedBy', 'name').lean();
   if (!doc) throw notFound('Confirmation not found');
   if (!isAdmin(req) && String(doc.createdBy?._id) !== String(req.user._id)) throw forbidden();
   res.json(doc);
@@ -185,10 +187,26 @@ router.post('/:id/approve', adminOnly, async (req, res) => {
   if (!doc) throw notFound('Confirmation not found');
   if (doc.status !== 'confirmed') throw badRequest('Only a signed confirmation can be approved');
   if (doc.approvedAt) throw badRequest('Already approved');
+  if (doc.rejectedAt) throw badRequest('This confirmation was rejected');
   doc.approvedAt = new Date();
   doc.approvedBy = req.user._id;
   await doc.save();
   await audit(req, { action: 'approve', entity: 'Confirmation', entityId: doc._id, summary: `Approved balance confirmation of ${doc.customer?.shopName} (${inr(doc.closingBalance)})` });
+  res.json({ ok: true });
+});
+
+// Admin rejects a signed confirmation (balance in his books differs). Unlocks the period.
+router.post('/:id/reject', adminOnly, async (req, res) => {
+  const { reason } = z.object({ reason: z.string().trim().min(3, 'Write why you are rejecting').max(500) }).parse(req.body || {});
+  const doc = await Confirmation.findById(req.params.id).populate('customer', 'shopName');
+  if (!doc) throw notFound('Confirmation not found');
+  if (doc.status !== 'confirmed') throw badRequest('Only a signed confirmation can be rejected');
+  if (doc.rejectedAt) throw badRequest('Already rejected');
+  doc.rejectedAt = new Date();
+  doc.rejectedBy = req.user._id;
+  doc.rejectReason = reason;
+  await doc.save();
+  await audit(req, { action: 'reject', entity: 'Confirmation', entityId: doc._id, summary: `Rejected balance confirmation of ${doc.customer?.shopName} (${inr(doc.closingBalance)}): ${reason}` });
   res.json({ ok: true });
 });
 

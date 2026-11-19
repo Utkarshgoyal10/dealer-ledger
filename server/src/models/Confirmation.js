@@ -26,6 +26,10 @@ const confirmationSchema = new mongoose.Schema(
     // Admin cross-check of a signed confirmation
     approvedAt: Date,
     approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    // Admin rejects after cross-check (unlocks the period; a fresh signature is needed)
+    rejectedAt: Date,
+    rejectedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    rejectReason: { type: String, trim: true, default: '' },
     resolvedAt: Date,
     resolvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     adminNote: { type: String, trim: true, default: '' },

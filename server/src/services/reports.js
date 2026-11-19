@@ -254,7 +254,7 @@ export async function adminDashboard() {
     CashClosing.countDocuments({ status: 'submitted' }),
     LoginRequest.countDocuments({ status: 'pending', dateKey: istDateKey(today) }),
     Confirmation.countDocuments({ status: 'disputed', resolvedAt: null }),
-    Confirmation.countDocuments({ status: 'confirmed', approvedAt: null }),
+    Confirmation.countDocuments({ status: 'confirmed', approvedAt: null, rejectedAt: null }),
   ]);
 
   const balances = await computeBalances(customers);
