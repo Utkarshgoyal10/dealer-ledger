@@ -18,6 +18,8 @@ import auditRoutes from './routes/audit.js';
 import loginRequestRoutes from './routes/loginRequests.js';
 import pushRoutes from './routes/push.js';
 import confirmationRoutes from './routes/confirmations.js';
+import productRoutes from './routes/products.js';
+import stockCheckRoutes from './routes/stockChecks.js';
 
 export function createApp() {
   const app = express();
@@ -38,6 +40,8 @@ export function createApp() {
   app.use('/api/login-requests', requireAuth, loginRequestRoutes);
   app.use('/api/push', requireAuth, pushRoutes);
   app.use('/api/confirmations', requireAuth, confirmationRoutes);
+  app.use('/api/products', requireAuth, productRoutes);
+  app.use('/api/stock-checks', requireAuth, stockCheckRoutes);
   app.use('/api', (req, res) => res.status(404).json({ message: 'Not found' }));
 
   // Optional: serve the built React app from the same server (single deployment)

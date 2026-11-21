@@ -17,6 +17,9 @@ import AuditLog from './pages/AuditLog';
 import LoginApprovals from './pages/LoginApprovals';
 import ConfirmBalance from './pages/ConfirmBalance';
 import Confirmations from './pages/Confirmations';
+import StockCheck from './pages/StockCheck';
+import StockChecks from './pages/StockChecks';
+import Products from './pages/Products';
 
 function Protected({ children, admin }) {
   const { user, checking } = useAuth();
@@ -46,6 +49,9 @@ export default function App() {
         <Route path="customers" element={<Customers />} />
         <Route path="customers/:id" element={<CustomerDetail />} />
         <Route path="customers/:id/confirm" element={<ConfirmBalance />} />
+        <Route path="customers/:id/stock" element={<StockCheck />} />
+        <Route path="stock-checks" element={<Protected admin><StockChecks /></Protected>} />
+        <Route path="products" element={<Protected admin><Products /></Protected>} />
         <Route path="confirmations" element={<Protected admin><Confirmations /></Protected>} />
         <Route path="entries" element={<Protected admin><Entries /></Protected>} />
         <Route path="requests" element={<Requests />} />

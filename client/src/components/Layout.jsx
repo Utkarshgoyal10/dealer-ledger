@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
-  Home, Users, ReceiptText, KeyRound, Wallet, BarChart3, UserCog, History, MoreHorizontal, LogOut, UserCircle, LogIn, CalendarCheck, PenLine,
+  Home, Users, ReceiptText, KeyRound, Wallet, BarChart3, UserCog, History, MoreHorizontal, LogOut, UserCircle, LogIn, CalendarCheck, PenLine, Boxes, Tags,
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { api } from '../api';
@@ -22,6 +22,8 @@ const ADMIN_NAV = [
   { to: '/requests', label: 'Data requests', icon: KeyRound, badge: 'requests' },
   { to: '/cash', label: 'Cash closing', icon: Wallet, badge: 'closings' },
   { to: '/confirmations', label: 'Confirmations', icon: PenLine, badge: 'disputes' },
+  { to: '/stock-checks', label: 'Stock checks', icon: Boxes },
+  { to: '/products', label: 'Models & prices', icon: Tags },
   { to: '/reports', label: 'Reports', icon: BarChart3 },
   { to: '/workers', label: 'Users', icon: UserCog },
   { to: '/audit', label: 'Audit log', icon: History },

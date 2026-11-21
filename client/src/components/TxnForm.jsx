@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Trash2 } from 'lucide-react';
 import { api, errMsg } from '../api';
+import { useApi } from '../hooks/useApi';
 import { useAuth } from '../auth/AuthContext';
 import { Button, ErrorBox, Field, Input, Modal, Segmented, Textarea } from './ui';
 import CustomerPicker from './CustomerPicker';
-import { istKey, todayKey, daysAgoKey, TYPE_META } from '../utils/format';
+import { istKey, todayKey, daysAgoKey, TYPE_META, inr, fmtDate } from '../utils/format';
 
 const TYPES = ['sale', 'return', 'payment', 'scheme'].map((v) => ({ value: v, label: TYPE_META[v].label }));
 
@@ -31,6 +32,9 @@ export default function TxnForm({ open, onClose, onSaved, txn, customerId, defau
   const { user } = useAuth();
   const isAdmin = user.role === 'admin';
   const [f, setF] = useState(() => initial(txn, customerId, defaultType));
+  // Warn (don't block) when this dealer was found short in the last stock check
+  const stock = useApi(open && !txn && f.type === 'sale' && f.customer ? `/stock-checks/status/${f.customer}` : null);
+  const short = stock.data?.last?.stillShort > 0 ? stock.data.last : null;
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -113,6 +117,11 @@ export default function TxnForm({ open, onClose, onSaved, txn, customerId, defau
 
         <Field as="div" label="Dealer">
           <CustomerPicker value={f.customer} onChange={(v) => set('customer', v)} disabled={!!customerId && !txn} required />
+          {short && (
+            <div className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900 ring-1 ring-amber-200">
+              <b>⚠ Dealer is short by {inr(short.stillShort)}</b> — stock check on {fmtDate(short.createdAt)} found less stock than outstanding. Collect payment first.
+            </div>
+          )}
         </Field>
 
         <div className="grid grid-cols-2 gap-3">

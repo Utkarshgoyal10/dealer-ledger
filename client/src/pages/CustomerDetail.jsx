@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import ConfirmationView, { CONFIRM_STATUS } from '../components/ConfirmationView';
+import { StockCheckView } from './StockChecks';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Pencil, Plus, KeyRound, Trash2, Lock, Eye, EyeOff, PenLine, ShoppingCart, Undo2, Wallet, Gift } from 'lucide-react';
+import { ArrowLeft, Pencil, Plus, KeyRound, Trash2, Lock, Eye, EyeOff, PenLine, Boxes, ShoppingCart, Undo2, Wallet, Gift } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { useApi } from '../hooks/useApi';
 import { api, errMsg } from '../api';
@@ -42,6 +43,8 @@ export default function CustomerDetail() {
   const [requesting, setRequesting] = useState(false);
   const confirm = useApi(`/confirmations/status/${id}`);
   const [viewingConf, setViewingConf] = useState(null);
+  const stock = useApi(`/stock-checks/status/${id}`);
+  const [viewingStock, setViewingStock] = useState(null);
 
   // Salesman: balance and entries stay covered until tapped, so a dealer looking at the
   // phone sees nothing by accident. Covered again on another dealer / when the app is left.
@@ -169,6 +172,30 @@ export default function CustomerDetail() {
         />
       )}
       <ConfirmationView id={viewingConf} onClose={() => setViewingConf(null)} onChanged={confirm.reload} />
+      {stock.data && !stock.data.handledByAdmin && (
+        <div className="mb-3 flex items-center justify-between gap-2 rounded-xl bg-white px-3 py-2.5 ring-1 ring-slate-200">
+          <div className="min-w-0 text-xs">
+            {stock.data.last ? (
+              <button type="button" onClick={() => setViewingStock(stock.data.last._id)} className="text-left">
+                {stock.data.last.stillShort > 0 ? (
+                  <span className="font-bold text-rose-700">⚠ Short by {inr(stock.data.last.stillShort)} — collect</span>
+                ) : (
+                  <span className="font-bold text-emerald-700">✓ Stock covers outstanding</span>
+                )}
+                <span className="block text-slate-500 underline">
+                  Last stock check {fmtDate(stock.data.last.createdAt)} • {stock.data.last.totalQty} phones {inr(stock.data.last.stockValue)}
+                </span>
+              </button>
+            ) : (
+              <span className="text-slate-500">No stock check yet</span>
+            )}
+          </div>
+          <Button size="sm" variant="secondary" onClick={() => nav(`/customers/${id}/stock`)}>
+            <Boxes className="h-4 w-4" /> Stock check
+          </Button>
+        </div>
+      )}
+      <StockCheckView id={viewingStock} onClose={() => setViewingStock(null)} />
 
       {visibility && (
         <div className="mb-3 flex items-start gap-2 rounded-lg bg-indigo-50 px-3 py-2 text-xs text-indigo-900 ring-1 ring-indigo-100">
